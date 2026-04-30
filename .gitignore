@@ -1,0 +1,26 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Outputs temporales
+*.log
+output/
