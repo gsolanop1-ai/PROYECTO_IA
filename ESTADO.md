@@ -100,14 +100,6 @@ proyecto_ia/
 ├── ESTADO.md                           Este archivo
 ├── requirements.txt                    Dependencias
 ├── .gitignore
-├── main.py                             Script de demostración
-│
-├── src/                                Código fuente modular
-│   ├── __init__.py
-│   ├── nutricion.py                    Capa 1
-│   ├── perfil.py                       Datos del usuario
-│   ├── sistema_experto.py              Capa 2 (RA1.2)
-│   └── optimizador.py                  Capa 4 (RA1.1)
 │
 ├── data/
 │   └── ingredientes_dataset.csv        81 ingredientes curados
@@ -118,19 +110,6 @@ proyecto_ia/
 │
 └── notebooks/
     └── demo.ipynb                      Versión Colab
-```
-
-## Cómo continuar el desarrollo
-
-### Para trabajar en VS Code
-
-```bash
-git clone <tu-repo>
-cd proyecto_ia
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python main.py
 ```
 
 ### Para trabajar en Colab
