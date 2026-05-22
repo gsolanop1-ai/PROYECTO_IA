@@ -1,7 +1,6 @@
 ---
 ## 📄 4. `bitacora_decisiones.md`
 
-```markdown
 # Bitácora de Decisiones del Proyecto
 ## Sistema Inteligente de Recomendación Alimenticia
 
