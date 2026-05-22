@@ -9,12 +9,23 @@ Sistema de recomendación nutricional personalizada que genera planes alimentici
 | Capa | Técnica |
 |---|---|
 | 1 | Cálculo nutricional (Mifflin-St Jeor) |
-| 2 | Sistema Experto (18 reglas) |
+| 2 | Sistema Experto |
 | 3 | K-Means Clustering |
 | 4 | Optimización con PuLP |
+| 5 | LLM (Gemini API) — Nombrado de platillos |
+
+## Resumen de reglas del sistema
+
+| Tipo | Cantidad | Ubicación |
+|---|---|---|
+| Salud | 4 | Sistema Experto (Grupo A) |
+| Contexto | 3 | Sistema Experto (Grupo B) |
+| Estructura | 4 | Optimizador PuLP |
+| Macros | 3 | Celda 5 |
+| Seguridad | 1 | Celda 5 |
+| **Total activas** | **15** | |
 
 ## Estructura del proyecto
-
 
 ```
 proyecto_ia/
@@ -23,13 +34,12 @@ proyecto_ia/
 │ └── ingredientes_dataset.csv # 81 ingredientes curados
 ├── docs/
 │ ├── bitacora_decisiones.md # Decisiones técnicas tomadas
-│ └── catalogo_reglas.md # Las 18 reglas del Sistema Experto
+│ └── catalogo_reglas.md # Catálogo completo de reglas
 ├── notebooks/
 │ └── demo.ipynb # Notebook para ejecutar en Colab
 ├── requirements.txt # Dependencias
 └── README.md
 ```
-
 
 ## Ejecución en Google Colab
 
@@ -41,7 +51,7 @@ proyecto_ia/
 
 Sistema base completado y validado:
 - Cálculo nutricional con Mifflin-St Jeor y regla de seguridad calórica
-- Sistema Experto con 18 reglas (filtrado, estructura, salud, contexto)
+- Sistema Experto con reglas de salud y contexto
 - K-Means clustering con 4 clusters nutricionales
 - Optimización con programación lineal y fallback automático
 - Orquestador con memoria de ingredientes para promover variedad
