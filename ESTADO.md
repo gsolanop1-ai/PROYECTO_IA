@@ -1,6 +1,6 @@
 # Estado del Proyecto
 
-**Última actualización:** 
+**Última actualación:** 
 
 ## Avance: Versión 1.0 — Sistema completado
 
@@ -17,10 +17,9 @@
   - Validación robusta de inputs
   - Diseño modular para futuras fuentes
 
-- [x] Sistema Experto con 18 reglas 
-  - Grupo C: Estructura por comida
-  - Grupo D: Reglas de salud (D1, D3, D4, D5)
-  - Grupo E: Contexto del momento
+- [x] Sistema Experto 
+  - Grupo A: Reglas de salud (4 reglas)
+  - Grupo B: Reglas de contexto (3 reglas)
 
 - [x] K-Means Clustering
   - 4 clusters nutricionales identificados
@@ -29,11 +28,9 @@
 
 - [x] Optimizador con PuLP 
   - Programación lineal mixta entera
-  - Restricciones de macros con tolerancia
-  - Estructura obligatoria por comida
-  - Snack contextual según objetivo
-  - Desayuno sin verduras
-  - Límite de ingredientes anti-buffet
+  - Grupo C: Estructura por comida (4 reglas)
+  - Grupo D: Reparto de macros (3 reglas)
+  - Grupo E: Seguridad calórica (1 regla)
   - Fallback automático ante infactibilidad
 
 - [x] Orquestador del Plan Diario
@@ -48,20 +45,22 @@
 - Casos cubiertos:
   - Hombre joven, ganar músculo
   - Mujer adulta, perder grasa
-  - Adulto mayor, mantener peso (activa reglas D4/D5)
+  - Adulto mayor, mantener peso (activa reglas A3/A4)
   - Mujer joven activa, ganar músculo
 
-### Decisiones técnicas tomadas
+### Total de reglas activas: 15
 
-Ver `docs/bitacora_decisiones.md` para detalles. Resumen:
-
-- Dataset propio de 81 ingredientes peruanos curados
-- Macros perder grasa: 40/35/25
-- Distribución de comidas variable por objetivo
-- Snack contextual con configuraciones diferenciadas
-- Mínimo de seguridad: 1500 kcal hombre / 1200 kcal mujer
+| Grupo | Tipo | Cantidad | Ubicación |
+|---|---|---|---|
+| A | SOFT | 4 | Sistema Experto |
+| B | SOFT | 3 | Sistema Experto |
+| C | HARD | 4 | Optimizador |
+| D | HARD | 3 | Celda 5 |
+| E | HARD | 1 | Celda 5 |
 
 ## Estructura del repositorio
+
+```
 proyecto_ia/
 ├── README.md Descripción general
 ├── ESTADO.md Este archivo
@@ -77,7 +76,7 @@ proyecto_ia/
 │
 └── notebooks/
 └── demo.ipynb Versión Colab
-
+```
 
 ### Para trabajar en Colab
 
