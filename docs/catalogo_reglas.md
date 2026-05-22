@@ -1,4 +1,4 @@
-# Catálogo de Reglas del Sistema Experto
+# Catálogo de Reglas del Sistema
 
 El sistema completo cuenta con **15 reglas activas** distribuidas en 5 grupos funcionales.
 
@@ -12,6 +12,7 @@ El sistema completo cuenta con **15 reglas activas** distribuidas en 5 grupos fu
 | D | HARD | 3 | Celda 5 | Reparto de macros según objetivo |
 | E | HARD | 1 | Celda 5 | Seguridad calórica |
 | **Total activas** | | **15** | | |
+
 ---
 
 ## Grupo A — Reglas de salud (SOFT, modifican pesos) - Ubicación: Celda 7
