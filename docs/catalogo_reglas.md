@@ -66,4 +66,5 @@ for regla in resultado['reglas_log']:
 
 # Ejemplo de salida:
 # A2: peso×1.5 a 9 proteínas con ≥25g/100g
-# B1: carnes habilitadas en desayuno (ganar músculo)
+# B1: carnes habilitadas en desayuno (ganar músculo)  
+
