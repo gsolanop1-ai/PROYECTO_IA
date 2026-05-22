@@ -1,86 +1,62 @@
 # Catálogo de Reglas del Sistema Experto
 
-Documento de referencia de las 18 reglas implementadas en la **Capa 2** del sistema (`src/sistema_experto.py` y `src/nutricion.py`).
+El sistema completo cuenta con **15 reglas activas** distribuidas en 5 grupos funcionales.
 
-## Estructura general
+## Distribución general
 
-| Grupo | Tipo | Cantidad | Descripción |
-|---|---|---|---|
-| A | HARD | 2 | Filtrado por dieta |
-| B | HARD | 3 | Reparto de macros según objetivo |
-| C | HARD | 4 | Estructura por comida |
-| D | SOFT | 5 | Reglas de salud (modifican pesos) |
-| E | SOFT/HARD | 4 | Contexto del momento |
-| F | HARD | 1 | Seguridad calórica |
-| **Total** | | **18** | |
+| Grupo | Tipo | Cantidad | Ubicación | Descripción |
+|---|---|---|---|---|
+| A | SOFT | 4 | Sistema Experto (Celda 7) | Reglas de salud (modifican pesos) |
+| B | SOFT | 3 | Sistema Experto (Celda 7) | Contexto del momento |
+| C | HARD | 4 | Optimizador PuLP (Capa 4) | Estructura obligatoria por comida |
+| D | HARD | 3 | Celda 5 | Reparto de macros según objetivo |
+| E | HARD | 1 | Celda 5 | Seguridad calórica |
+| **Total activas** | | **15** | | |
+---
 
-## Grupo A — Filtrado por dieta (HARD)
+## Grupo A — Reglas de salud (SOFT, modifican pesos) - Ubicación: Celda 7
 
 | ID | Condición | Acción |
 |---|---|---|
-| A1 | dieta = vegetariano | Excluir ingredientes con `apto_vegetariano = False` |
-| A2 | dieta = vegano | Excluir ingredientes con `apto_vegano = False` |
+| A1 | objetivo = perder_grasa | Peso × 0.5 a ingredientes con grasa saturada > 7g |
+| A2 | objetivo = ganar_musculo Y categoria = Proteina | Peso × 1.5 a proteínas con ≥25g/100g |
+| A3 | edad > 50 | Peso × 0.5 a ingredientes con grasa saturada > 5g |
+| A4 | edad > 50 | Peso × 1.5 a palta, nueces, chía, salmón, jurel, caballa, almendras |
 
-> En v1.0 estas reglas no se disparan (solo se acepta dieta omnívora). El código está preparado para reactivación en v2.0 sin migraciones del dataset.
+## Grupo B — Contexto del momento (SOFT) - Ubicación: Celda 7
 
-## Grupo B — Reparto de macros según objetivo (HARD)
+| ID | Condición | Acción |
+|---|---|---|
+| B1 | desayuno + ganar_musculo | Habilitar carnes en desayuno |
+| B2 | comida = snack | Peso × 1.5 a ingredientes con "snack" en comidas_recomendadas |
+| B3 | cena + perder_grasa | Peso × 1.5 a pescado magro y hojas verdes; × 0.7 a carnes rojas |
 
-| ID | Objetivo | Calorías | Proteína | Carbos | Grasa |
-|---|---|---|---|---|---|
-| B1 | perder_grasa | GET × 0.80 | 40% | 35% | 25% |
-| B2 | mantener | GET × 1.00 | 30% | 45% | 25% |
-| B3 | ganar_musculo | GET × 1.15 | 35% | 40% | 25% |
-
-## Grupo C — Estructura por comida (HARD)
+## Grupo C — Estructura por comida (HARD) - Ubicación: Optimizador PuLP
 
 | ID | Comida | Estructura obligatoria |
 |---|---|---|
 | C1 | desayuno | Mínimo 1 carbohidrato |
 | C2 | almuerzo | Mínimo 1 proteína + 1 carbohidrato + 1 verdura |
-| C3 | cena | Mínimo 1 proteína + 1 verdura (carbohidrato opcional) |
+| C3 | cena | Mínimo 1 proteína + 1 verdura |
 | C4 | snack | Sin estructura rígida (configuración contextual por objetivo) |
 
-## Grupo D — Reglas de salud (SOFT, modifican pesos)
+## Grupo D — Reparto de macros según objetivo (HARD) - Ubicación: Celda 5
+
+| ID | Objetivo | Ajuste calórico | Proteína | Carbos | Grasa |
+|---|---|---|---|---|---|
+| D1 | perder_grasa | GET × 0.80 | 40% | 35% | 25% |
+| D2 | mantener | GET × 1.00 | 30% | 45% | 25% |
+| D3 | ganar_musculo | GET × 1.15 | 35% | 40% | 25% |
+
+## Grupo E — Seguridad calórica (HARD) - Ubicación: Celda 5
 
 | ID | Condición | Acción |
 |---|---|---|
-| D1 | objetivo = perder_grasa | Peso × 0.5 a ingredientes con grasa saturada > 7g |
-| D2 | (descartada) | No incluida por falta de respaldo científico moderno |
-| D3 | objetivo = ganar_musculo Y categoría = Proteína | Peso × 1.5 a proteínas con ≥25g/100g |
-| D4 | edad > 50 | Peso × 0.5 a ingredientes con grasa saturada > 5g |
-| D5 | edad > 50 | Peso × 1.5 a palta, nueces, chía, salmón, pescados grasos |
-
-## Grupo E — Contexto del momento (SOFT + HARD)
-
-| ID | Condición | Acción |
-|---|---|---|
-| E1 | desayuno + ganar_musculo | HARD: habilitar carnes en desayuno (pollo, pavo, etc.) |
-| E2 | comida = snack | SOFT: peso × 1.5 a ingredientes con "snack" en `comidas_recomendadas` |
-| E3 | cena + perder_grasa | SOFT: peso × 1.5 a pescado magro y hojas; × 0.7 a carnes rojas |
-| E4 | nivel_actividad ∈ ('intenso', 'muy_intenso') | HARD: factor de actividad 1.725 (aplicado en TMB) |
-
-## Grupo F — Seguridad calórica (HARD)
-
-| ID | Condición | Acción |
-|---|---|---|
-| F1 | calorías_calculadas < mínimo_seguridad | Forzar calorías al mínimo (1500 hombre / 1200 mujer) y emitir advertencia |
-
-## Restricciones adicionales en el optimizador (Capa 4)
-
-Aunque no son "reglas" del Sistema Experto en sentido estricto, complementan su lógica:
-
-- Máximo 1 ingrediente por categoría (excepto verduras: máximo 2 en comidas principales)
-- Máximo 1 ingrediente por grupo intercambiable (evita "olluco + camote")
-- Solo 1 entre Bebida y Lácteo (no leche + bebida vegetal juntas)
-- Límite de cantidad total de ingredientes según objetivo y comida
-- En comidas principales: ≥70% de la proteína desde fuentes "reales" (Proteína o Lácteo)
-- Snack contextual: categorías y porciones diferentes según objetivo
-- Desayuno sin verduras (excepto camote como tubérculo permitido)
-- Snack excluye ingredientes que requieren preparación (legumbres, granos andinos, tubérculos)
+| E1 | calorías_calculadas < mínimo_seguridad | Forzar calorías al mínimo (1500 hombre / 1200 mujer) y emitir advertencia |
 
 ## Cómo se evidencian en el log
 
-Cada vez que el Sistema Experto evalúa un perfil, registra qué reglas se dispararon. Este log es crucial para defender el proyecto en la exposición:
+Cada vez que el Sistema Experto evalúa un perfil, registra qué reglas de los **Grupos A y B** se dispararon:
 
 ```python
 resultado = sistema.evaluar(perfil, 'almuerzo')
@@ -88,10 +64,5 @@ for regla in resultado['reglas_log']:
     print(regla)
 
 # Ejemplo de salida:
-# D3: peso×1.5 a 9 proteínas con ≥25g/100g
-# E1: carnes habilitadas en desayuno (ganar músculo)
-```
-
-## Decisión sobre regla descartada
-
-**Regla D2** ("no carbohidratos de IG alto en la cena") fue evaluada y descartada porque la evidencia científica moderna no respalda este principio. Estudios actuales indican que la distribución horaria de carbohidratos importa menos que el balance calórico total. Esta decisión se mantiene documentada para preservar el rigor científico del proyecto.
+# A2: peso×1.5 a 9 proteínas con ≥25g/100g
+# B1: carnes habilitadas en desayuno (ganar músculo)
