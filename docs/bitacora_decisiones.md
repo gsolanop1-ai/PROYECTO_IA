@@ -1,14 +1,9 @@
----
-## 📄 4. `bitacora_decisiones.md`
-
 # Bitácora de Decisiones del Proyecto
 ## Sistema Inteligente de Recomendación Alimenticia
 
 **Curso:** Inteligencia Artificial: Principios y Técnicas (ISIA-108)
 **Universidad:** UPAO — Semestre 2026-10
 **Última actualización:** 
-
----
 
 ## 1. Descripción del proyecto
 
