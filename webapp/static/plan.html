@@ -11,6 +11,11 @@
     <div class="topbar-logo">Nutri<span>Perú</span></div>
     <div style="display:flex;align-items:center;gap:14px">
       <div class="topbar-user" id="topUser"></div>
+      <button onclick="irIngredientes()" title="Mis ingredientes"
+              style="background:rgba(255,255,255,.2);border:none;color:#fff;
+                     border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.8rem">
+        🥗 Ingredientes
+      </button>
       <button onclick="irPerfil()" title="Editar perfil"
               style="background:rgba(255,255,255,.2);border:none;color:#fff;
                      border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.8rem">
@@ -89,6 +94,7 @@
       `${dias[hoy.getDay()]} ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
 
     function irPerfil() { window.location.href = '/perfil'; }
+    function irIngredientes() { window.location.href = '/ingredientes'; }
 
     function showToast(msg) {
       const t = document.getElementById('toast');

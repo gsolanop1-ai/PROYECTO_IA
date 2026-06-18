@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from .database import engine, get_db, Base
 from .models import Usuario, PlanDiario
+from . import ai_engine
 from .ai_engine import PerfilUsuario, generar_plan_completo
 
 # Crear tablas al iniciar
@@ -34,6 +35,10 @@ def perfil_page():
 def plan_page():
     return FileResponse(STATIC_DIR / "plan.html")
 
+@app.get("/ingredientes")
+def ingredientes_page():
+    return FileResponse(STATIC_DIR / "ingredientes.html")
+
 
 # ── Schemas ───────────────────────────────────────────────────
 class EntrarRequest(BaseModel):
@@ -46,6 +51,9 @@ class PerfilRequest(BaseModel):
     altura_cm:       float = Field(..., ge=100, le=230)
     nivel_actividad: str
     objetivo:        str
+
+class IngredientesRequest(BaseModel):
+    ingredientes: list[str]
 
 
 # ── Helpers ───────────────────────────────────────────────────
@@ -126,6 +134,49 @@ def guardar_perfil(username: str, req: PerfilRequest, db: Session = Depends(get_
     return {"ok": True, "username": user.username}
 
 
+@app.get("/api/ingredientes")
+def get_todos_ingredientes():
+    """Retorna todos los ingredientes del dataset agrupados por categoría."""
+    grupos: dict = {}
+    for _, row in ai_engine.df_ingredientes.iterrows():
+        cat = row['categoria']
+        if cat not in grupos:
+            grupos[cat] = []
+        grupos[cat].append({'nombre': row['nombre'], 'categoria': cat})
+    return grupos
+
+
+@app.get("/api/usuario/{username}/ingredientes")
+def get_ingredientes_usuario(username: str, db: Session = Depends(get_db)):
+    """Ingredientes disponibles del usuario. null en DB = todos."""
+    user = get_usuario_or_404(db, username)
+    if user.ingredientes_json:
+        return {"ingredientes": json.loads(user.ingredientes_json), "personalizado": True}
+    return {"ingredientes": ai_engine.df_ingredientes['nombre'].tolist(), "personalizado": False}
+
+
+@app.post("/api/usuario/{username}/ingredientes")
+def guardar_ingredientes(username: str, req: IngredientesRequest,
+                         db: Session = Depends(get_db)):
+    """Guarda la selección y borra el plan de hoy para regenerarlo."""
+    user = get_usuario_or_404(db, username)
+    todos = set(ai_engine.df_ingredientes['nombre'].tolist())
+    seleccion = [n for n in req.ingredientes if n in todos]
+    if len(seleccion) == len(todos):
+        user.ingredientes_json = None       # usa todos → no guardar lista
+    else:
+        user.ingredientes_json = json.dumps(seleccion, ensure_ascii=False)
+    # Borrar plan de hoy para forzar regeneración con nuevos ingredientes
+    plan_db = db.query(PlanDiario).filter(
+        PlanDiario.usuario_id == user.id,
+        PlanDiario.fecha == date.today()
+    ).first()
+    if plan_db:
+        db.delete(plan_db)
+    db.commit()
+    return {"ok": True, "total_seleccionados": len(seleccion)}
+
+
 @app.get("/api/usuario/{username}/plan")
 def get_plan(username: str, db: Session = Depends(get_db)):
     """Devuelve el plan del día. Lo genera si no existe todavía."""
@@ -145,9 +196,10 @@ def get_plan(username: str, db: Session = Depends(get_db)):
         return json.loads(plan_db.plan_json)
 
     # Generar plan nuevo con variedad entre días
-    perfil           = usuario_a_perfil(user)
-    ingredientes_ant = ingredientes_ultimos_dias(db, user.id, dias=2)
-    plan             = generar_plan_completo(perfil, ingredientes_ant or None)
+    perfil            = usuario_a_perfil(user)
+    ingredientes_ant  = ingredientes_ultimos_dias(db, user.id, dias=2)
+    disponibles       = json.loads(user.ingredientes_json) if user.ingredientes_json else None
+    plan              = generar_plan_completo(perfil, ingredientes_ant or None, disponibles)
 
     # Guardar en DB
     nuevo = PlanDiario(

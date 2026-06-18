@@ -182,7 +182,10 @@
           body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error((await res.json()).detail || 'Error');
-        window.location.href = '/plan';
+        // Primera vez → elegir ingredientes; edición → volver al plan
+        const perfilActual = await fetch(`/api/usuario/${username}/ingredientes`);
+        const pd = await perfilActual.json();
+        window.location.href = pd.personalizado ? '/plan' : '/ingredientes';
       } catch(e) {
         document.getElementById('formError').textContent = e.message;
         btn.disabled = false;

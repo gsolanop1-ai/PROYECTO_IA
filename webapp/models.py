@@ -14,6 +14,7 @@ class Usuario(Base):
     altura_cm        = Column(Float,    nullable=True)
     nivel_actividad  = Column(String(20), nullable=True)
     objetivo         = Column(String(20), nullable=True)
+    ingredientes_json = Column(Text, nullable=True)  # null = todos disponibles
 
     planes = relationship("PlanDiario", back_populates="usuario", cascade="all, delete-orphan")
 

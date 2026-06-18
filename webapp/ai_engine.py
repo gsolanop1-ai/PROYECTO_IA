@@ -465,12 +465,20 @@ def generar_nombre_platillo(ingredientes_plan, tipo_comida):
     return nombre.capitalize(), desc
 
 # ── Función principal de generación ──────────────────────────
-def generar_plan_completo(perfil: PerfilUsuario, ingredientes_previos=None) -> dict:
+def generar_plan_completo(perfil: PerfilUsuario, ingredientes_previos=None,
+                          ingredientes_disponibles=None) -> dict:
     """
     Genera un plan diario completo con nombres de platillos.
-    ingredientes_previos: set de nombres a evitar (de días anteriores).
+    ingredientes_previos:   set de nombres a evitar (de días anteriores).
+    ingredientes_disponibles: list/set de nombres permitidos (None = todos).
     """
-    sistema      = SistemaExperto(df_ingredientes)
+    df = df_ingredientes.copy()
+    if ingredientes_disponibles:
+        df_filtrado = df[df['nombre'].isin(ingredientes_disponibles)]
+        if len(df_filtrado) >= 8:
+            df = df_filtrado
+
+    sistema      = SistemaExperto(df)
     orquestador  = OrquestadorDiario(sistema)
     plan         = orquestador.generar_plan_diario(perfil, ingredientes_previos)
 
