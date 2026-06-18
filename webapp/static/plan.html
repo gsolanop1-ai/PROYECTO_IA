@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NutriPerú — Mi Plan</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-logo">Nutri<span>Perú</span></div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="topbar-user" id="topUser"></div>
+      <button onclick="irPerfil()" title="Editar perfil"
+              style="background:rgba(255,255,255,.2);border:none;color:#fff;
+                     border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.8rem">
+        ✏️ Perfil
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Anillo calórico -->
+    <div id="ringSection" class="card" style="padding:0">
+      <div class="kcal-ring-wrap">
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
+            <circle class="ring-bg" cx="70" cy="70" r="60"/>
+            <circle class="ring-fg" id="ringFg" cx="70" cy="70" r="60"
+                    stroke-dasharray="377" stroke-dashoffset="377"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-kcal" id="kcalReal">—</div>
+            <div class="ring-label">de <span id="kcalTarget">—</span> kcal</div>
+          </div>
+        </div>
+        <div class="ring-date" id="fechaLabel"></div>
+      </div>
+      <!-- Macros -->
+      <div class="macros-row" style="padding:0 20px 20px">
+        <div class="macro-item">
+          <div class="macro-name">Proteína</div>
+          <div class="macro-val"><span id="mProtReal">—</span>g</div>
+          <div class="macro-bar-bg"><div class="macro-bar-fg p" id="mProtBar" style="width:0%"></div></div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-name">Carbos</div>
+          <div class="macro-val"><span id="mCarbReal">—</span>g</div>
+          <div class="macro-bar-bg"><div class="macro-bar-fg c" id="mCarbBar" style="width:0%"></div></div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-name">Grasa</div>
+          <div class="macro-val"><span id="mGrasReal">—</span>g</div>
+          <div class="macro-bar-bg"><div class="macro-bar-fg g" id="mGrasBar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards de comidas -->
+    <div id="mealsContainer">
+      <!-- Skeleton mientras carga -->
+      <div class="card" style="height:80px"><div class="skeleton" style="height:100%;border-radius:12px"></div></div>
+      <div class="card" style="height:80px"><div class="skeleton" style="height:100%;border-radius:12px"></div></div>
+      <div class="card" style="height:80px"><div class="skeleton" style="height:100%;border-radius:12px"></div></div>
+      <div class="card" style="height:80px"><div class="skeleton" style="height:100%;border-radius:12px"></div></div>
+    </div>
+
+    <p id="errorMsg" class="error-box" style="display:none">
+      <span class="icon">⚠️</span>
+      <span id="errorText"></span>
+    </p>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const ICONOS  = {desayuno:'☀️', almuerzo:'🍽️', cena:'🌙', snack:'🥝'};
+    const LABELS  = {desayuno:'Desayuno', almuerzo:'Almuerzo', cena:'Cena', snack:'Snack'};
+    const username = localStorage.getItem('np_username');
+
+    if (!username) window.location.href = '/';
+    document.getElementById('topUser').textContent = '👤 ' + username;
+
+    // Fecha en español
+    const hoy = new Date();
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    document.getElementById('fechaLabel').textContent =
+      `${dias[hoy.getDay()]} ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
+
+    function irPerfil() { window.location.href = '/perfil'; }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function animateRing(real, target) {
+      const circ = 2 * Math.PI * 60;
+      const pct  = Math.min(real / target, 1);
+      document.getElementById('ringFg').style.strokeDashoffset = circ * (1 - pct);
+    }
+
+    function renderMacroBar(idBar, real, target) {
+      document.getElementById(idBar).style.width = Math.min(real/target*100,100) + '%';
+    }
+
+    function buildMealCard(comida_res, nombres_platillos) {
+      const tipo     = comida_res.comida;
+      const platillo = nombres_platillos?.[tipo] || {};
+      const ings     = comida_res.plan || [];
+      const tot      = comida_res.totales;
+      const tgt      = comida_res.targets;
+
+      const ingRows = ings.map(i => `
+        <div class="ing-row">
+          <div class="ing-left">
+            <div class="ing-dot"></div>
+            <div>
+              <div class="ing-nombre">${i.nombre}</div>
+              <div class="ing-cat">${i.categoria}</div>
+            </div>
+          </div>
+          <div class="ing-right">
+            <div class="ing-gramos">${i.gramos}g</div>
+            <div class="ing-kcal">${i.kcal} kcal</div>
+          </div>
+        </div>`).join('');
+
+      const devKcal = comida_res.desviaciones?.kcal ?? 0;
+      const devColor = Math.abs(devKcal) < 3 ? '#2ecc71' : Math.abs(devKcal) < 5 ? '#f39c12' : '#e74c3c';
+
+      return `
+        <div class="meal-card" id="card-${tipo}">
+          <div class="meal-header" onclick="toggleCard('${tipo}')">
+            <div class="meal-left">
+              <div class="meal-icon ${tipo}">${ICONOS[tipo]}</div>
+              <div>
+                <div class="meal-name">${LABELS[tipo]}</div>
+                <div class="meal-plato">${platillo.nombre || '—'}</div>
+                ${platillo.descripcion ? `<div class="meal-desc">${platillo.descripcion}</div>` : ''}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center">
+              <div>
+                <div class="meal-kcal">${tot.kcal} kcal</div>
+                <div style="font-size:.68rem;color:${devColor};text-align:right">${devKcal>0?'+':''}${devKcal}%</div>
+              </div>
+              <div class="meal-chevron">▼</div>
+            </div>
+          </div>
+          <div class="meal-body">
+            <div class="ing-list">${ingRows}</div>
+            <div class="meal-macros">
+              <div class="m-macro p"><div class="val">${tot.proteina}g</div><div class="lbl">Proteína</div></div>
+              <div class="m-macro c"><div class="val">${tot.carbos}g</div><div class="lbl">Carbos</div></div>
+              <div class="m-macro g"><div class="val">${tot.grasa}g</div><div class="lbl">Grasa</div></div>
+              <div class="m-macro"><div class="val" style="color:var(--gris-700)">${ings.length}</div><div class="lbl">Ingredientes</div></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function toggleCard(tipo) {
+      document.getElementById('card-' + tipo).classList.toggle('open');
+    }
+
+    async function cargarPlan() {
+      try {
+        const res  = await fetch(`/api/usuario/${username}/plan`);
+        if (res.status === 400) {
+          window.location.href = '/perfil';
+          return;
+        }
+        if (!res.ok) throw new Error((await res.json()).detail || 'Error al cargar plan');
+
+        const plan = await res.json();
+        const td   = plan.totales_dia;
+        const tt   = plan.targets_dia;
+        const np   = plan.nombres_platillos || {};
+
+        // Actualizar anillo calórico
+        document.getElementById('kcalReal').textContent   = td.kcal;
+        document.getElementById('kcalTarget').textContent = tt.calorias_objetivo;
+        animateRing(td.kcal, tt.calorias_objetivo);
+
+        // Macros
+        document.getElementById('mProtReal').textContent = td.proteina;
+        document.getElementById('mCarbReal').textContent = td.carbos;
+        document.getElementById('mGrasReal').textContent = td.grasa;
+        renderMacroBar('mProtBar', td.proteina, tt.proteina_g);
+        renderMacroBar('mCarbBar', td.carbos,   tt.carbos_g);
+        renderMacroBar('mGrasBar', td.grasa,    tt.grasa_g);
+
+        // Meal cards
+        const container = document.getElementById('mealsContainer');
+        container.innerHTML = plan.comidas.map(c => buildMealCard(c, np)).join('');
+
+        // Abrir almuerzo por defecto
+        const alm = document.getElementById('card-almuerzo');
+        if (alm) alm.classList.add('open');
+
+      } catch(e) {
+        document.getElementById('mealsContainer').innerHTML = '';
+        const errEl = document.getElementById('errorMsg');
+        document.getElementById('errorText').textContent = e.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    cargarPlan();
+  </script>
+</body>
+</html>
