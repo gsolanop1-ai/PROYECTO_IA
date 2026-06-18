@@ -107,7 +107,7 @@
       <p id="calcDisplay" style="font-size:.82rem;color:var(--gris-400);text-align:center;
                                   margin-bottom:6px;min-height:18px"></p>
       <p id="imcDisplay"  style="font-size:.82rem;text-align:center;margin-bottom:12px;
-                                  min-height:18px;font-weight:600"></p>
+                                  display:none;font-weight:600"></p>
       <p id="formError"   style="font-size:.82rem;color:var(--rojo);text-align:center;
                                   margin-bottom:8px;min-height:18px"></p>
 
@@ -214,7 +214,6 @@
       });
 
       document.getElementById('calcDisplay').style.display  = 'block';
-      document.getElementById('imcDisplay').style.display   = 'block';
       document.getElementById('botonesVista').style.display  = 'none';
       document.getElementById('botonesEdicion').style.display = 'block';
       document.getElementById('btnGuardar').textContent = primera ? 'Generar mi plan →' : 'Guardar cambios';
@@ -271,19 +270,23 @@
 
       const imcEl = document.getElementById('imcDisplay');
 
-      if (!peso || !talla) { imcEl.textContent = ''; }
+      if (!peso || !talla) { imcEl.textContent = ''; imcEl.style.display = 'none'; }
       else {
         const alturaM = talla / 100;
         const imc = peso / (alturaM * alturaM);
         const pesoMin = Math.round(18.5 * alturaM * alturaM);
         const pesoMax = Math.round(24.9 * alturaM * alturaM);
         let cat, color;
-        if      (imc < 18.5) { cat = 'Bajo peso ⚠️';    color = '#3498db'; }
-        else if (imc < 25)   { cat = 'Peso normal ✓';   color = '#2ecc71'; }
-        else if (imc < 30)   { cat = 'Sobrepeso ⚠️';    color = '#f39c12'; }
-        else                  { cat = 'Obesidad ⚠️';     color = '#e74c3c'; }
-        imcEl.textContent = `IMC ${imc.toFixed(1)} — ${cat} · Rango saludable: ${pesoMin}–${pesoMax} kg`;
-        imcEl.style.color = color;
+        if      (imc < 18.5) { cat = 'Bajo peso';        color = '#3498db'; }
+        else if (imc < 25)   { cat = 'Peso saludable ✓'; color = '#2ecc71'; }
+        else if (imc < 30)   { cat = 'Por encima del rango'; color = '#f39c12'; }
+        else                  { cat = 'Obesidad ⚠️';      color = '#e74c3c'; }
+        imcEl.innerHTML = `IMC ${imc.toFixed(1)} — <span style="color:${color}">${cat}</span>`
+          + ` · Ref. saludable: ${pesoMin}–${pesoMax} kg`
+          + `<br><span style="font-size:.72rem;color:var(--gris-400);font-weight:400">`
+          + `El IMC es referencial y puede variar en personas con alta masa muscular</span>`;
+        imcEl.style.color = 'var(--gris-700)';
+        imcEl.style.display = 'block';
       }
 
       if (!edad || !peso || !talla || !sexo || !act || !obj) return;
