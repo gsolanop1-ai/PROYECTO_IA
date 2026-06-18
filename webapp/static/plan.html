@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="topbar-logo">Nutri<span>Perú</span></div>
+    <div class="topbar-logo" onclick="window.location.href='/cuenta'">Nutri<span>Perú</span></div>
     <div style="display:flex;align-items:center;gap:14px">
       <div class="topbar-user" id="topUser"></div>
       <button onclick="irIngredientes()" title="Mis ingredientes"
@@ -83,6 +83,72 @@
     const LABELS  = {desayuno:'Desayuno', almuerzo:'Almuerzo', cena:'Cena', snack:'Snack'};
     const username = localStorage.getItem('np_username');
 
+    // ── Unidades amigables ────────────────────────────────────
+    const UNIDADES = {
+      'Pollo':           {u:'presa',     ref:200},
+      'Pavo':            {u:'filete',    ref:150},
+      'Carne molida':    {u:'porción',   ref:100},
+      'Bistec':          {u:'filete',    ref:150},
+      'Lomo de res':     {u:'filete',    ref:150},
+      'Cerdo':           {u:'chuleta',   ref:120},
+      'Pescado blanco':  {u:'filete',    ref:150},
+      'Jurel':           {u:'filete',    ref:150},
+      'Caballa':         {u:'filete',    ref:150},
+      'Salmon':          {u:'filete',    ref:150},
+      'Atun':            {u:'lata',      ref:150},
+      'Huevo':           {u:'unidad',    ref:55},
+      'Proteina en polvo':{u:'cucharada',ref:30},
+      'Arroz':           {u:'taza',      ref:80},
+      'Papa':            {u:'unidad',    ref:120},
+      'Camote':          {u:'unidad',    ref:150},
+      'Yuca':            {u:'trozo',     ref:100},
+      'Pasta':           {u:'taza',      ref:80},
+      'Avena':           {u:'taza',      ref:80},
+      'Pan':             {u:'rebanada',  ref:35},
+      'Choclo':          {u:'mazorca',   ref:150},
+      'Platano':         {u:'unidad',    ref:100},
+      'Manzana':         {u:'unidad',    ref:130},
+      'Naranja':         {u:'unidad',    ref:130},
+      'Mandarina':       {u:'unidad',    ref:80},
+      'Pina':            {u:'tajada',    ref:80},
+      'Papaya':          {u:'trozo',     ref:100},
+      'Pera':            {u:'unidad',    ref:120},
+      'Durazno':         {u:'unidad',    ref:100},
+      'Mango':           {u:'unidad',    ref:150},
+      'Sandia':          {u:'tajada',    ref:200},
+      'Kiwi':            {u:'unidad',    ref:70},
+      'Uvas':            {u:'racimo',    ref:100},
+      'Fresas':          {u:'taza',      ref:100},
+      'Arandanos':       {u:'taza',      ref:100},
+      'Tomate':          {u:'unidad',    ref:120},
+      'Zanahoria':       {u:'unidad',    ref:80},
+      'Pepino':          {u:'unidad',    ref:150},
+      'Espinaca':        {u:'taza',      ref:60},
+      'Brocoli':         {u:'taza',      ref:90},
+      'Leche':           {u:'vaso',      ref:200},
+      'Yogurt':          {u:'vaso',      ref:200},
+      'Queso blanco':    {u:'porción',   ref:30},
+      'Queso amarillo':  {u:'rebanada',  ref:20},
+      'Palta':           {u:'unidad',    ref:150},
+      'Mani':            {u:'puñado',    ref:30},
+      'Almendras':       {u:'puñado',    ref:28},
+      'Nueces':          {u:'puñado',    ref:28},
+      'Aceitunas':       {u:'porción',   ref:30},
+    };
+
+    function unidadAmigable(nombre, gramos) {
+      const info = UNIDADES[nombre];
+      if (!info) return '';
+      const cant = gramos / info.ref;
+      if (cant < 0.3) return '';
+      let label;
+      if      (Math.abs(cant - Math.round(cant)) < 0.15) label = `≈ ${Math.round(cant)} ${info.u}`;
+      else if (Math.abs(cant - 0.5) < 0.15)              label = `≈ ½ ${info.u}`;
+      else if (Math.abs(cant - 1.5) < 0.15)              label = `≈ 1½ ${info.u}`;
+      else                                                label = `≈ ${cant.toFixed(1)} ${info.u}`;
+      return `<span class="ing-unidad">${label}</span>`;
+    }
+
     if (!username) window.location.href = '/';
     document.getElementById('topUser').textContent = '👤 ' + username;
 
@@ -131,6 +197,7 @@
           </div>
           <div class="ing-right">
             <div class="ing-gramos">${i.gramos}g</div>
+            ${unidadAmigable(i.nombre, i.gramos)}
             <div class="ing-kcal">${i.kcal} kcal</div>
           </div>
         </div>`).join('');

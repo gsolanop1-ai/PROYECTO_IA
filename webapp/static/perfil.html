@@ -8,24 +8,24 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="topbar-logo">Nutri<span>Perú</span></div>
+    <div class="topbar-logo" onclick="window.location.href='/cuenta'">Nutri<span>Perú</span></div>
     <div class="topbar-user" id="topUser"></div>
   </div>
 
   <div class="perfil-header">
-    <h1>Cuéntanos sobre ti</h1>
-    <p>Usamos tus datos para calcular tu plan nutricional exacto</p>
+    <h1 id="pHeader">Tu perfil</h1>
+    <p id="pSub">Estos son tus datos actuales</p>
   </div>
 
   <div class="container">
+    <button class="btn-back" id="btnVolver" onclick="volverAtras()">← Volver al plan</button>
+
     <div class="card">
-      <!-- Edad -->
       <div class="form-group">
         <label class="form-label">Edad</label>
         <input id="edad" class="form-input" type="number" placeholder="25" min="10" max="100"/>
       </div>
 
-      <!-- Sexo -->
       <div class="form-group">
         <label class="form-label">Sexo biológico</label>
         <div class="toggle-group">
@@ -35,7 +35,6 @@
         <input type="hidden" id="sexo"/>
       </div>
 
-      <!-- Peso / Talla -->
       <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label class="form-label">Peso (kg)</label>
@@ -47,10 +46,9 @@
         </div>
       </div>
 
-      <!-- Actividad -->
       <div class="form-group">
         <label class="form-label">Nivel de actividad</label>
-        <div class="option-grid">
+        <div class="option-grid" id="actGrid">
           <div class="option-card" data-val="sedentario" onclick="selectOption('nivel_actividad',this)">
             <div class="icon">🪑</div>
             <div class="label">Sedentario</div>
@@ -75,10 +73,9 @@
         <input type="hidden" id="nivel_actividad"/>
       </div>
 
-      <!-- Objetivo -->
       <div class="form-group">
         <label class="form-label">Objetivo nutricional</label>
-        <div style="display:flex;flex-direction:column;gap:8px">
+        <div id="objGrid" style="display:flex;flex-direction:column;gap:8px">
           <div class="option-card" style="text-align:left;display:flex;align-items:center;gap:14px"
                data-val="perder_grasa" onclick="selectOption('objetivo',this)">
             <div class="icon" style="font-size:1.6rem">🔥</div>
@@ -107,9 +104,25 @@
         <input type="hidden" id="objetivo"/>
       </div>
 
-      <p id="calcDisplay" style="font-size:.82rem;color:var(--gris-400);text-align:center;margin-bottom:12px;min-height:18px"></p>
-      <p id="formError"   style="font-size:.82rem;color:var(--rojo);text-align:center;margin-bottom:8px;min-height:18px"></p>
-      <button class="btn-primary" onclick="guardar()">Generar mi plan →</button>
+      <p id="calcDisplay" style="font-size:.82rem;color:var(--gris-400);text-align:center;
+                                  margin-bottom:6px;min-height:18px"></p>
+      <p id="imcDisplay"  style="font-size:.82rem;text-align:center;margin-bottom:12px;
+                                  min-height:18px;font-weight:600"></p>
+      <p id="formError"   style="font-size:.82rem;color:var(--rojo);text-align:center;
+                                  margin-bottom:8px;min-height:18px"></p>
+
+      <!-- Botones vista -->
+      <div id="botonesVista" style="display:none">
+        <button class="btn-primary" onclick="activarEdicion()">✏️ Editar perfil</button>
+      </div>
+
+      <!-- Botones edición -->
+      <div id="botonesEdicion">
+        <button id="btnGuardar" class="btn-primary" onclick="guardar()">Generar mi plan →</button>
+        <button id="btnCancelar" class="btn-secondary" style="display:none" onclick="cancelarEdicion()">Cancelar</button>
+      </div>
+
+      <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
   </div>
 
@@ -118,7 +131,119 @@
     if (!username) window.location.href = '/';
     document.getElementById('topUser').textContent = '👤 ' + username;
 
+    let editando       = false;
+    let datosGuardados = null;
+
+    // ── Init ─────────────────────────────────────────────────
+    async function init() {
+      try {
+        const res  = await fetch(`/api/usuario/${username}/perfil`);
+        const data = await res.json();
+        if (data.tiene_perfil) {
+          datosGuardados = data;
+          cargarDatos(data);
+          entrarModoVista();
+        } else {
+          entrarModoEdicion(true);
+        }
+      } catch(e) {
+        entrarModoEdicion(true);
+      }
+    }
+
+    function cargarDatos(data) {
+      document.getElementById('edad').value     = data.edad;
+      document.getElementById('peso_kg').value  = data.peso_kg;
+      document.getElementById('altura_cm').value = data.altura_cm;
+      document.getElementById('sexo').value           = data.sexo;
+      document.getElementById('nivel_actividad').value = data.nivel_actividad;
+      document.getElementById('objetivo').value        = data.objetivo;
+
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.val === data.sexo);
+      });
+      document.querySelectorAll('.option-card').forEach(card => {
+        card.classList.toggle('active',
+          card.dataset.val === data.nivel_actividad ||
+          card.dataset.val === data.objetivo);
+      });
+    }
+
+    // ── Modo vista (datos en oro) ─────────────────────────────
+    function entrarModoVista() {
+      editando = false;
+      document.getElementById('pHeader').textContent = 'Tu perfil';
+      document.getElementById('pSub').textContent    = 'Estos son tus datos actuales';
+      document.getElementById('btnVolver').style.display = 'inline-flex';
+
+      ['edad','peso_kg','altura_cm'].forEach(id => {
+        const el = document.getElementById(id);
+        el.disabled = true;
+        el.classList.add('view-sel');
+      });
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.add(btn.classList.contains('active') ? 'view-sel' : '');
+      });
+      document.querySelectorAll('.option-card').forEach(card => {
+        if (card.classList.contains('active')) card.classList.add('view-sel');
+      });
+
+      document.getElementById('calcDisplay').style.display = 'none';
+      document.getElementById('imcDisplay').style.display  = 'none';
+      document.getElementById('formError').textContent     = '';
+      document.getElementById('botonesVista').style.display   = 'block';
+      document.getElementById('botonesEdicion').style.display = 'none';
+    }
+
+    // ── Modo edición ──────────────────────────────────────────
+    function entrarModoEdicion(primera = false) {
+      editando = true;
+      document.getElementById('pHeader').textContent = primera ? 'Cuéntanos sobre ti' : 'Editar perfil';
+      document.getElementById('pSub').textContent    = primera
+        ? 'Usamos tus datos para calcular tu plan nutricional exacto'
+        : 'Modifica los datos que quieras cambiar';
+      document.getElementById('btnVolver').style.display = primera ? 'none' : 'inline-flex';
+
+      ['edad','peso_kg','altura_cm'].forEach(id => {
+        const el = document.getElementById(id);
+        el.disabled = false;
+        el.classList.remove('view-sel');
+      });
+      document.querySelectorAll('.toggle-btn, .option-card').forEach(el => {
+        el.classList.remove('view-sel');
+      });
+
+      document.getElementById('calcDisplay').style.display  = 'block';
+      document.getElementById('imcDisplay').style.display   = 'block';
+      document.getElementById('botonesVista').style.display  = 'none';
+      document.getElementById('botonesEdicion').style.display = 'block';
+      document.getElementById('btnGuardar').textContent = primera ? 'Generar mi plan →' : 'Guardar cambios';
+      document.getElementById('btnCancelar').style.display = primera ? 'none' : 'block';
+      recalc();
+    }
+
+    function activarEdicion()  { entrarModoEdicion(false); }
+
+    function cancelarEdicion() {
+      cargarDatos(datosGuardados);
+      entrarModoVista();
+    }
+
+    function volverAtras() {
+      if (editando && datosGuardados) {
+        if (!confirm('¿Salir sin guardar cambios?')) return;
+      }
+      window.location.href = '/plan';
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('np_username');
+      window.location.href = '/';
+    }
+
+    // ── Selección de opciones ─────────────────────────────────
     function selectToggle(campo, btn) {
+      if (!editando) return;
       btn.closest('.toggle-group').querySelectorAll('.toggle-btn')
          .forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -127,27 +252,47 @@
     }
 
     function selectOption(campo, card) {
-      card.closest('.option-grid, [style]').querySelectorAll('.option-card')
+      if (!editando) return;
+      card.closest('.option-grid, [id]').querySelectorAll('.option-card')
           .forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       document.getElementById(campo).value = card.dataset.val;
       recalc();
     }
 
+    // ── Preview calórico + IMC ────────────────────────────────
     function recalc() {
       const edad  = parseFloat(document.getElementById('edad').value);
       const peso  = parseFloat(document.getElementById('peso_kg').value);
       const talla = parseFloat(document.getElementById('altura_cm').value);
       const sexo  = document.getElementById('sexo').value;
+      const act   = document.getElementById('nivel_actividad').value;
       const obj   = document.getElementById('objetivo').value;
-      if (!edad || !peso || !talla || !sexo || !obj) return;
+
+      const imcEl = document.getElementById('imcDisplay');
+
+      if (!peso || !talla) { imcEl.textContent = ''; }
+      else {
+        const alturaM = talla / 100;
+        const imc = peso / (alturaM * alturaM);
+        const pesoMin = Math.round(18.5 * alturaM * alturaM);
+        const pesoMax = Math.round(24.9 * alturaM * alturaM);
+        let cat, color;
+        if      (imc < 18.5) { cat = 'Bajo peso ⚠️';    color = '#3498db'; }
+        else if (imc < 25)   { cat = 'Peso normal ✓';   color = '#2ecc71'; }
+        else if (imc < 30)   { cat = 'Sobrepeso ⚠️';    color = '#f39c12'; }
+        else                  { cat = 'Obesidad ⚠️';     color = '#e74c3c'; }
+        imcEl.textContent = `IMC ${imc.toFixed(1)} — ${cat} · Rango saludable: ${pesoMin}–${pesoMax} kg`;
+        imcEl.style.color = color;
+      }
+
+      if (!edad || !peso || !talla || !sexo || !act || !obj) return;
+
       const tmb = sexo === 'M'
         ? 10*peso + 6.25*talla - 5*edad + 5
         : 10*peso + 6.25*talla - 5*edad - 161;
       const factores = {sedentario:1.2, ligero:1.375, moderado:1.55, intenso:1.725};
-      const act = document.getElementById('nivel_actividad').value;
-      if (!act) return;
-      const get = tmb * (factores[act] || 1.55);
+      const get  = tmb * (factores[act] || 1.55);
       const ajuste = {perder_grasa:0.80, mantener:1.00, ganar_musculo:1.15}[obj] || 1;
       const kcal = Math.round(get * ajuste);
       document.getElementById('calcDisplay').textContent =
@@ -158,22 +303,23 @@
       document.getElementById(id).addEventListener('input', recalc)
     );
 
+    // ── Guardar ───────────────────────────────────────────────
     async function guardar() {
       const campos = ['edad','sexo','peso_kg','altura_cm','nivel_actividad','objetivo'];
       const data   = {};
       for (const c of campos) {
         const v = document.getElementById(c).value;
         if (!v) {
-          document.getElementById('formError').textContent = 'Completa todos los campos.';
+          document.getElementById('formError').textContent = 'Completa todos los campos antes de continuar.';
           return;
         }
         data[c] = ['edad','peso_kg','altura_cm'].includes(c) ? parseFloat(v) : v;
       }
 
       document.getElementById('formError').textContent = '';
-      const btn = document.querySelector('.btn-primary');
+      const btn = document.getElementById('btnGuardar');
       btn.disabled = true;
-      btn.textContent = 'Generando tu plan...';
+      btn.textContent = 'Guardando…';
 
       try {
         const res = await fetch(`/api/usuario/${username}/perfil`, {
@@ -182,16 +328,18 @@
           body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error((await res.json()).detail || 'Error');
-        // Primera vez → elegir ingredientes; edición → volver al plan
-        const perfilActual = await fetch(`/api/usuario/${username}/ingredientes`);
-        const pd = await perfilActual.json();
+
+        const perfilRes = await fetch(`/api/usuario/${username}/ingredientes`);
+        const pd = await perfilRes.json();
         window.location.href = pd.personalizado ? '/plan' : '/ingredientes';
       } catch(e) {
         document.getElementById('formError').textContent = e.message;
         btn.disabled = false;
-        btn.textContent = 'Generar mi plan →';
+        btn.textContent = datosGuardados ? 'Guardar cambios' : 'Generar mi plan →';
       }
     }
+
+    init();
   </script>
 </body>
 </html>
