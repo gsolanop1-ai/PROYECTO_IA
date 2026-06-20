@@ -1,64 +1,110 @@
-# Sistema Inteligente de Recomendación Alimenticia
+# Sistema Inteligente de Recomendación Alimenticia — NutriPerú
 
 Proyecto académico del curso **Inteligencia Artificial: Principios y Técnicas (ISIA-108)** — UPAO 2026-10.
 
-Sistema de recomendación nutricional personalizada que genera planes alimenticios diarios (desayuno, almuerzo, cena, snack) con ingredientes peruanos, basado en el perfil del usuario y aplicando técnicas de Inteligencia Artificial.
+Sistema de recomendación nutricional personalizada que genera planes alimenticios diarios con ingredientes peruanos, basado en el perfil del usuario y aplicando técnicas de IA.
+
+---
+
+## Aplicación web (NutriPerú)
+
+Plataforma web construida sobre el sistema del notebook, que permite al usuario interactuar con el motor de IA desde el navegador.
+
+### Tecnologías usadas
+
+| Capa | Tecnología |
+|---|---|
+| Backend | FastAPI + Python |
+| Base de datos | SQLite (desarrollo) / PostgreSQL (producción) |
+| ORM | SQLAlchemy |
+| Frontend | HTML + CSS + JavaScript (vanilla) |
+| Despliegue | Render.com |
+
+### Páginas de la app
+
+| Ruta | Descripción |
+|---|---|
+| `/` | Login con nombre de usuario |
+| `/perfil` | Formulario de datos personales con preview de IMC y calorías |
+| `/ingredientes` | Selección de ingredientes disponibles por el usuario |
+| `/plan` | Plan nutricional del día (anillo calórico + 4 comidas) |
+| `/cuenta` | Menú de cuenta del usuario |
+
+### Lo que hace la app
+
+- Registra el perfil del usuario (edad, sexo, peso, talla, actividad, objetivo)
+- Permite seleccionar qué ingredientes tiene disponibles
+- Genera un plan diario de 4 comidas (desayuno, almuerzo, cena, snack) con gramos exactos y unidades amigables
+- Almacena el plan en base de datos para no regenerarlo si el usuario vuelve el mismo día
+- Cambia el plan automáticamente cada día, evitando repetir ingredientes de días anteriores
+
+---
+
+## Qué se trasladó del notebook al código
+
+| Celda notebook | Componente en el código |
+|---|---|
+| Celda 4 — Mifflin-St Jeor | `ai_engine.py` → `calcular_tmb()`, `calcular_get()`, `calcular_targets_diarios()` |
+| Celda 5 — Distribución de macros | `ai_engine.py` → `REGLAS_OBJETIVO`, `DISTRIBUCION_POR_OBJETIVO` |
+| Celda 6 — PerfilUsuario | `ai_engine.py` → clase `PerfilUsuario` |
+| Celda 7 — Sistema Experto (reglas A1–A4, B1–B3) | `ai_engine.py` → clase `SistemaExperto` |
+| Celda 8 — K-Means | Los clusters validan las categorías del dataset CSV; no corre en tiempo real |
+| Celda 9 — Optimización PuLP | `ai_engine.py` → `_construir_y_resolver()`, `optimizar_comida()` |
+| Celda 10 — Orquestador | `ai_engine.py` → clase `OrquestadorDiario` |
+| Celda 14 — LLM (nombres de platillos) | `ai_engine.py` → `generar_nombre_platillo()` con plantillas locales como fallback |
+
+> Las celdas de análisis (EDA, Cross-Validation K-Means, Suite VV&E) son exclusivas del notebook y no se ejecutan en la app.
+
+---
 
 ## Arquitectura del sistema
 
 | Capa | Técnica |
 |---|---|
 | 1 | Cálculo nutricional (Mifflin-St Jeor) |
-| 2 | Sistema Experto |
-| 3 | K-Means Clustering |
-| 4 | Optimización con PuLP |
-| 5 | LLM (Gemini API) — Nombrado de platillos |
+| 2 | Sistema Experto (reglas de salud y contexto) |
+| 3 | K-Means Clustering (precomputado en dataset) |
+| 4 | Optimización con PuLP (programación lineal entera) |
+| 5 | Generador de nombres de platillos |
 
-## Resumen de reglas del sistema
-
-| Tipo | Cantidad | Ubicación |
-|---|---|---|
-| Salud | 4 | Sistema Experto (Grupo A) |
-| Contexto | 3 | Sistema Experto (Grupo B) |
-| Estructura | 4 | Optimizador PuLP |
-| Macros | 3 | Celda 5 |
-| Seguridad | 1 | Celda 5 |
-| **Total activas** | **15** | |
+---
 
 ## Estructura del proyecto
 
 ```
 proyecto_ia/
-│
 ├── data/
-│ └── ingredientes_dataset.csv # 81 ingredientes curados
+│   └── ingredientes_dataset.csv   # 81 ingredientes curados
 ├── docs/
-│ ├── bitacora_decisiones.md # Decisiones técnicas tomadas
-│ └── catalogo_reglas.md # Catálogo completo de reglas
+│   ├── bitacora_decisiones.md
+│   └── catalogo_reglas.md
 ├── notebooks/
-│ └── demo.ipynb # Notebook para ejecutar en Colab
-├── requirements.txt # Dependencias
+│   └── demo.ipynb                 # Notebook para ejecutar en Colab
+├── webapp/
+│   ├── main.py                    # Endpoints FastAPI
+│   ├── ai_engine.py               # Motor de IA trasladado del notebook
+│   ├── models.py                  # Modelos de base de datos
+│   ├── database.py                # Conexión DB
+│   └── static/                   # Frontend HTML/CSS/JS
+├── requirements.txt
+├── render.yaml                    # Configuración de despliegue
 └── README.md
 ```
 
-## Ejecución en Google Colab
+---
 
-1. Sube el archivo `data/ingredientes_dataset.csv` a tu Google Drive en `/MyDrive/proyecto_ia/`
-2. Abre `notebooks/demo.ipynb` en Google Colab
-3. Ejecuta todas las celdas en orden
+## Ejecución local
 
-## Estado actual
+```bash
+pip install -r webapp/requirements.txt
+uvicorn webapp.main:app --reload --port 8001
+```
 
-Sistema base completado y validado:
-- Cálculo nutricional con Mifflin-St Jeor y regla de seguridad calórica
-- Sistema Experto con reglas de salud y contexto
-- K-Means clustering con 4 clusters nutricionales
-- Optimización con programación lineal y fallback automático
-- Orquestador con memoria de ingredientes para promover variedad
-- Validado con 4 perfiles diversos (desviación promedio: 1.7%)
+Abrir: `http://localhost:8001`
+
+---
 
 ## Equipo y contexto
 
 Universidad Privada Antenor Orrego — Facultad de Ingeniería
-Programa: Ingeniería de Sistemas e Inteligencia Artificial
-Semestre 2026-10
+Programa: Ingeniería de Sistemas e Inteligencia Artificial — Semestre 2026-10
