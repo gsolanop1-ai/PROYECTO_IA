@@ -138,6 +138,138 @@ def guardar_perfil(username: str, req: PerfilRequest, db: Session = Depends(get_
     return {"ok": True, "username": user.username}
 
 
+@app.get("/api/admin/stats")
+def get_admin_stats():
+    """Estadísticas del dataset para el panel académico."""
+    import pandas as pd
+    df = ai_engine.df_ingredientes.copy()
+    nums = ['calorias', 'proteina_g', 'carbohidratos_g', 'grasa_g', 'fibra_g', 'grasa_saturada_g']
+    for col in nums:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    por_cat = {}
+    for cat, grp in df.groupby('categoria'):
+        por_cat[cat] = {
+            'count':       int(len(grp)),
+            'avg_kcal':    round(float(grp['calorias'].mean()), 1),
+            'avg_proteina':round(float(grp['proteina_g'].mean()), 1),
+            'avg_carbos':  round(float(grp['carbohidratos_g'].mean()), 1),
+            'avg_grasa':   round(float(grp['grasa_g'].mean()), 1),
+        }
+
+    top_proteina = df.nlargest(7, 'proteina_g')[['nombre','proteina_g','categoria']]\
+                     .to_dict('records')
+
+    ig_conteo = df['indice_glucemico'].value_counts().to_dict()
+
+    return {
+        'por_categoria':   por_cat,
+        'top_proteina':    top_proteina,
+        'ig_distribucion': ig_conteo,
+    }
+
+
+@app.get("/api/admin/kmeans")
+def get_kmeans_data():
+    """Ejecuta K-Means (k=2..10) y PCA para visualización en el panel académico."""
+    import pandas as pd, numpy as np
+    from sklearn.cluster import KMeans
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+    from sklearn.metrics import silhouette_score
+
+    df = ai_engine.df_ingredientes.copy()
+    feats = ['calorias', 'proteina_g', 'carbohidratos_g', 'grasa_g', 'fibra_g',
+             'azucar_g', 'grasa_saturada_g', 'sodio_mg']
+    for f in feats:
+        df[f] = pd.to_numeric(df[f], errors='coerce')
+    df = df.dropna(subset=feats).reset_index(drop=True)
+    X = StandardScaler().fit_transform(df[feats])
+
+    inercias, siluetas = [], []
+    for k in range(2, 11):
+        km = KMeans(n_clusters=k, random_state=42, n_init=10)
+        lbl = km.fit_predict(X)
+        inercias.append(round(float(km.inertia_), 1))
+        siluetas.append(round(float(silhouette_score(X, lbl)), 3))
+
+    # PCA scatter con k=4 (elegido por dominio, equilibra silueta y semántica)
+    km4 = KMeans(n_clusters=4, random_state=42, n_init=10)
+    clusters = km4.fit_predict(X)
+    pca = PCA(n_components=2, random_state=42)
+    X2 = pca.fit_transform(X)
+    centros2 = pca.transform(km4.cluster_centers_)
+    var_exp = [round(float(v) * 100, 1) for v in pca.explained_variance_ratio_]
+
+    scatter = [
+        {'x': round(float(X2[i, 0]), 3), 'y': round(float(X2[i, 1]), 3),
+         'cluster': int(clusters[i]), 'nombre': df.iloc[i]['nombre'],
+         'categoria': df.iloc[i]['categoria']}
+        for i in range(len(df))
+    ]
+    centros = [
+        {'x': round(float(centros2[c, 0]), 3), 'y': round(float(centros2[c, 1]), 3)}
+        for c in range(4)
+    ]
+
+    return {
+        'rango_k':   list(range(2, 11)),
+        'inercias':  inercias,
+        'siluetas':  siluetas,
+        'k_usado':   4,
+        'silueta_k4': siluetas[2],  # índice 2 → k=4
+        'var_exp':   var_exp,
+        'scatter':   scatter,
+        'centros':   centros,
+    }
+
+
+@app.get("/api/admin/vve")
+def get_vve_results():
+    """Ejecuta la suite VV&E con 4 perfiles de prueba."""
+    from .ai_engine import PerfilUsuario, generar_plan_completo
+
+    perfiles_prueba = [
+        ('Hombre joven\nganar músculo',
+         PerfilUsuario(edad=25, sexo='M', peso_kg=75, altura_cm=175,
+                       nivel_actividad='moderado', objetivo='ganar_musculo')),
+        ('Mujer adulta\nperder grasa',
+         PerfilUsuario(edad=35, sexo='F', peso_kg=65, altura_cm=162,
+                       nivel_actividad='sedentario', objetivo='perder_grasa')),
+        ('Adulto mayor\nmantener peso',
+         PerfilUsuario(edad=55, sexo='M', peso_kg=80, altura_cm=170,
+                       nivel_actividad='ligero', objetivo='mantener')),
+        ('Mujer activa\nganar músculo',
+         PerfilUsuario(edad=22, sexo='F', peso_kg=58, altura_cm=165,
+                       nivel_actividad='intenso', objetivo='ganar_musculo')),
+    ]
+
+    resultados = []
+    for label, perfil in perfiles_prueba:
+        plan    = generar_plan_completo(perfil)
+        t       = plan['targets_dia']
+        td      = plan['totales_dia']
+        factible = all(len(c['plan']) > 0 for c in plan['comidas'])
+
+        def desv(real, tgt):
+            return round((real - tgt) / tgt * 100, 1) if tgt else 0
+
+        resultados.append({
+            'label':             label,
+            'kcal_target':       t['calorias_objetivo'],
+            'kcal_real':         td['kcal'],
+            'desv_kcal':         desv(td['kcal'],       t['calorias_objetivo']),
+            'desv_proteina':     desv(td['proteina'],   t['proteina_g']),
+            'desv_carbos':       desv(td['carbos'],     t['carbos_g']),
+            'desv_grasa':        desv(td['grasa'],      t['grasa_g']),
+            'factible':          factible,
+            'num_comidas':       len(plan['comidas']),
+            'ing_unicos':        plan['ingredientes_unicos'],
+        })
+
+    return {'perfiles': resultados}
+
+
 @app.get("/api/ingredientes")
 def get_todos_ingredientes():
     """Retorna todos los ingredientes del dataset agrupados por categoría."""

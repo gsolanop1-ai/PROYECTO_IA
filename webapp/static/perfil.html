@@ -202,7 +202,8 @@
       document.getElementById('pSub').textContent    = primera
         ? 'Usamos tus datos para calcular tu plan nutricional exacto'
         : 'Modifica los datos que quieras cambiar';
-      document.getElementById('btnVolver').style.display = primera ? 'none' : 'inline-flex';
+      document.getElementById('btnVolver').style.display = 'inline-flex';
+      document.getElementById('btnVolver').textContent = primera ? '← Volver' : '← Volver al plan';
 
       ['edad','peso_kg','altura_cm'].forEach(id => {
         const el = document.getElementById(id);
@@ -232,7 +233,7 @@
       if (editando && datosGuardados) {
         if (!confirm('¿Salir sin guardar cambios?')) return;
       }
-      window.location.href = '/plan';
+      window.location.href = datosGuardados ? '/plan' : '/cuenta';
     }
 
     function cerrarSesion() {
@@ -296,10 +297,14 @@
         : 10*peso + 6.25*talla - 5*edad - 161;
       const factores = {sedentario:1.2, ligero:1.375, moderado:1.55, intenso:1.725};
       const get  = tmb * (factores[act] || 1.55);
-      const ajuste = {perder_grasa:0.80, mantener:1.00, ganar_musculo:1.15}[obj] || 1;
-      const kcal = Math.round(get * ajuste);
+      const ajuste   = {perder_grasa:0.80, mantener:1.00, ganar_musculo:1.15}[obj] || 1;
+      const minimo   = sexo === 'M' ? 1500 : 1200;
+      const kcalRaw  = get * ajuste;
+      const kcal     = Math.round(Math.max(kcalRaw, minimo));
+      const ajustado = kcalRaw < minimo;
       document.getElementById('calcDisplay').textContent =
-        `TMB ${Math.round(tmb)} kcal · GET ${Math.round(get)} kcal · Objetivo ${kcal} kcal/día`;
+        `TMB ${Math.round(tmb)} kcal · GET ${Math.round(get)} kcal · Objetivo ${kcal} kcal/día`
+        + (ajustado ? ` ⚠️ mínimo de seguridad (${minimo} kcal)` : '');
     }
 
     ['edad','peso_kg','altura_cm'].forEach(id =>

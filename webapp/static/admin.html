@@ -259,6 +259,7 @@
     <button class="tab-btn active" onclick="showTab('diseno', this)">📋 Informe de Diseño</button>
     <button class="tab-btn" onclick="showTab('bitacora', this)">📓 Bitácora de Decisiones</button>
     <button class="tab-btn" onclick="showTab('catalogo', this)">⚙️ Catálogo de Reglas</button>
+    <button class="tab-btn" onclick="showTab('viz', this); initCharts()">📊 Visualizaciones</button>
   </div>
 
   <div class="admin-content">
@@ -856,8 +857,82 @@
 
     </div><!-- /tab-catalogo -->
 
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 4 — VISUALIZACIONES
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-viz" class="tab-pane">
+
+      <!-- ── EDA ── -->
+      <div class="a-section-title" style="margin-top:8px">📦 Análisis exploratorio del dataset (EDA)</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Ingredientes por categoría</div>
+          <canvas id="chartDonut" height="260"></canvas>
+        </div>
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Distribución de índice glucémico</div>
+          <canvas id="chartIG" height="260"></canvas>
+        </div>
+      </div>
+
+      <div class="a-card" style="margin-bottom:16px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Macros promedio por categoría (g/100g)</div>
+        <canvas id="chartMacros" height="200"></canvas>
+      </div>
+
+      <div class="a-card" style="margin-bottom:24px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Top 7 ingredientes por proteína (g/100g)</div>
+        <canvas id="chartTopProt" height="200"></canvas>
+      </div>
+
+      <!-- ── K-Means ── -->
+      <div class="a-section-title">🤖 K-Means Clustering (Celda 8 del notebook)</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Método del codo — Inercia vs k</div>
+          <canvas id="chartElbow" height="220"></canvas>
+        </div>
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Coeficiente de silueta vs k</div>
+          <canvas id="chartSilueta" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="a-card" style="margin-bottom:24px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:4px">Scatter PCA — 81 ingredientes proyectados en 2D (k=4)</div>
+        <div id="pcaVar" style="font-size:.7rem;color:var(--gris-400);margin-bottom:10px"></div>
+        <canvas id="chartPCA" height="340"></canvas>
+      </div>
+
+      <!-- ── VV&E ── -->
+      <div class="a-section-title">✅ Suite de Validación, Verificación y Evaluación (VV&E)</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Desviación calórica por perfil (%)</div>
+          <canvas id="chartDesvKcal" height="160"></canvas>
+        </div>
+        <div class="a-card">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Desviación de macros por perfil (%)</div>
+          <canvas id="chartDesvMacros" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="a-card" style="margin-bottom:16px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--gris-400);text-transform:uppercase;margin-bottom:12px">Métricas globales del sistema</div>
+        <canvas id="chartMetricas" height="160"></canvas>
+      </div>
+
+      <div id="vveTable" style="margin-bottom:16px"></div>
+
+    </div><!-- /tab-viz -->
+
   </div><!-- /.admin-content -->
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     if (localStorage.getItem('np_username') !== 'admin') window.location.href = '/';
 
@@ -871,6 +946,262 @@
     function cerrarSesion() {
       localStorage.removeItem('np_username');
       window.location.href = '/';
+    }
+
+    // ── Paletas ──────────────────────────────────────────────
+    const CAT_COLORS = {
+      Proteina:'#e74c3c', Carbohidrato:'#f39c12', Verdura:'#2ecc71',
+      Fruta:'#e67e22', Grasa:'#9b59b6', Lacteo:'#3498db',
+      Condimento:'#95a5a6', Bebida:'#1abc9c',
+    };
+    const CLUSTER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12'];
+    const PERFIL_LABELS  = ['Hombre joven\nganar músculo','Mujer adulta\nperder grasa',
+                            'Adulto mayor\nmantener peso','Mujer activa\nganar músculo'];
+
+    const axisOpts = (beginAtZero = true) => ({
+      y: { beginAtZero, grid:{ color:'#f1f1f1' }, ticks:{ font:{ size:11 } } },
+      x: { grid:{ display:false }, ticks:{ font:{ size:11 } } },
+    });
+
+    let chartsInit = false;
+
+    async function initCharts() {
+      if (chartsInit) return;
+      chartsInit = true;
+
+      const [statsRes, kmRes, vveRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/kmeans'),
+        fetch('/api/admin/vve'),
+      ]);
+      const stats = await statsRes.json();
+      const km    = await kmRes.json();
+      const vve   = await vveRes.json();
+
+      const cats   = Object.keys(stats.por_categoria);
+      const cColors = cats.map(c => CAT_COLORS[c] || '#aaa');
+
+      // ① Donut — ingredientes por categoría
+      new Chart(document.getElementById('chartDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: cats,
+          datasets: [{ data: cats.map(c => stats.por_categoria[c].count),
+                       backgroundColor: cColors, borderWidth:2, borderColor:'#fff' }]
+        },
+        options: { cutout:'60%',
+          plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } } }
+      });
+
+      // ② Bar — índice glucémico
+      const igOrder = ['bajo','medio','alto','ninguno'];
+      const igColors = {'bajo':'#2ecc71','medio':'#f39c12','alto':'#e74c3c','ninguno':'#95a5a6'};
+      new Chart(document.getElementById('chartIG'), {
+        type: 'bar',
+        data: {
+          labels: igOrder.map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+          datasets: [{ label:'Ingredientes', data: igOrder.map(k => stats.ig_distribucion[k] || 0),
+                       backgroundColor: igOrder.map(k => igColors[k]), borderRadius:6 }]
+        },
+        options: { plugins:{ legend:{ display:false } }, scales: axisOpts() }
+      });
+
+      // ③ Grouped bar — macros por categoría
+      new Chart(document.getElementById('chartMacros'), {
+        type: 'bar',
+        data: {
+          labels: cats,
+          datasets: [
+            { label:'Proteína (g)', data: cats.map(c => stats.por_categoria[c].avg_proteina),
+              backgroundColor:'#3b82f6', borderRadius:4 },
+            { label:'Carbos (g)',   data: cats.map(c => stats.por_categoria[c].avg_carbos),
+              backgroundColor:'#f59e0b', borderRadius:4 },
+            { label:'Grasa (g)',    data: cats.map(c => stats.por_categoria[c].avg_grasa),
+              backgroundColor:'#ef4444', borderRadius:4 },
+          ]
+        },
+        options: { plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } },
+                   scales: axisOpts() }
+      });
+
+      // ④ Horizontal bar — top proteínas
+      new Chart(document.getElementById('chartTopProt'), {
+        type: 'bar',
+        data: {
+          labels: stats.top_proteina.map(i => i.nombre),
+          datasets: [{ label:'Proteína (g/100g)', data: stats.top_proteina.map(i => i.proteina_g),
+                       backgroundColor: stats.top_proteina.map(i => CAT_COLORS[i.categoria]||'#aaa'),
+                       borderRadius:6 }]
+        },
+        options: { indexAxis:'y', plugins:{ legend:{ display:false } },
+                   scales:{ x:{ beginAtZero:true, grid:{color:'#f1f1f1'}, ticks:{font:{size:11}} },
+                             y:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+      });
+
+      // ⑤ Elbow — inercia vs k
+      new Chart(document.getElementById('chartElbow'), {
+        type: 'line',
+        data: {
+          labels: km.rango_k,
+          datasets: [{ label:'Inercia', data: km.inercias, borderColor:'#3b82f6',
+                       backgroundColor:'rgba(59,130,246,.1)', tension:.3, fill:true,
+                       pointBackgroundColor:'#3b82f6', pointRadius:5 }]
+        },
+        options: { plugins:{ legend:{ display:false } }, scales: axisOpts() }
+      });
+
+      // ⑥ Silueta vs k (con línea vertical en k=4)
+      new Chart(document.getElementById('chartSilueta'), {
+        type: 'line',
+        data: {
+          labels: km.rango_k,
+          datasets: [
+            { label:'Silueta', data: km.siluetas, borderColor:'#e74c3c',
+              backgroundColor:'rgba(231,76,60,.1)', tension:.3, fill:true,
+              pointBackgroundColor: km.rango_k.map(k => k === km.k_usado ? '#2ecc71' : '#e74c3c'),
+              pointRadius: km.rango_k.map(k => k === km.k_usado ? 8 : 5) },
+          ]
+        },
+        options: {
+          plugins: {
+            legend:{ display:false },
+            tooltip:{ callbacks:{ label: ctx => `Silueta: ${ctx.raw}${ctx.dataIndex === km.k_usado-2 ? ' ← k usado' : ''}` } }
+          },
+          scales: axisOpts(false)
+        }
+      });
+
+      // ⑦ PCA Scatter — 81 ingredientes
+      document.getElementById('pcaVar').textContent =
+        `PC1 explica ${km.var_exp[0]}% de varianza · PC2 explica ${km.var_exp[1]}% · k=4 clusters`;
+
+      const scatterDatasets = [0,1,2,3].map(c => ({
+        label: `Cluster ${c+1}`,
+        data:  km.scatter.filter(p => p.cluster === c).map(p => ({ x:p.x, y:p.y, nombre:p.nombre, cat:p.categoria })),
+        backgroundColor: CLUSTER_COLORS[c] + 'bb',
+        pointRadius: 7,
+        pointHoverRadius: 9,
+      }));
+      scatterDatasets.push({
+        label: 'Centros',
+        data:  km.centros.map(c => ({ x:c.x, y:c.y })),
+        backgroundColor: '#000',
+        pointStyle: 'crossRot',
+        pointRadius: 10,
+        pointBorderWidth: 2.5,
+      });
+
+      new Chart(document.getElementById('chartPCA'), {
+        type: 'scatter',
+        data: { datasets: scatterDatasets },
+        options: {
+          plugins: {
+            legend: { position:'bottom', labels:{ font:{size:11}, padding:10 } },
+            tooltip: { callbacks: {
+              label: ctx => ctx.raw.nombre
+                ? `${ctx.raw.nombre} (${ctx.raw.cat}) [${ctx.raw.x}, ${ctx.raw.y}]`
+                : `Centro ${ctx.dataIndex+1}`
+            }}
+          },
+          scales: {
+            x: { title:{ display:true, text:'PC1', font:{size:11} }, grid:{color:'#f1f1f1'}, ticks:{font:{size:10}} },
+            y: { title:{ display:true, text:'PC2', font:{size:11} }, grid:{color:'#f1f1f1'}, ticks:{font:{size:10}} },
+          }
+        }
+      });
+
+      // ⑧ VV&E — desviación calórica (horizontal)
+      const perfiles = vve.perfiles;
+      const pLabels  = ['♂ Joven — Ganar músculo', '♀ Adulta — Perder grasa',
+                        '♂ Mayor — Mantener peso', '♀ Activa — Ganar músculo'];
+      const hAxisOpts = {
+        x: { beginAtZero:false, grid:{color:'#f1f1f1'}, ticks:{font:{size:11}},
+             title:{display:true, text:'Desviación (%)', font:{size:10}} },
+        y: { grid:{display:false}, ticks:{font:{size:12}} },
+      };
+
+      new Chart(document.getElementById('chartDesvKcal'), {
+        type: 'bar',
+        data: {
+          labels: pLabels,
+          datasets: [{
+            label: 'Desviación kcal (%)',
+            data:  perfiles.map(p => p.desv_kcal),
+            backgroundColor: perfiles.map(p =>
+              Math.abs(p.desv_kcal) <= 5 ? '#2ecc71cc' : '#e74c3ccc'),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend:{ display:false },
+            tooltip:{ callbacks:{ label: ctx =>
+              ` ${ctx.raw > 0 ? '+' : ''}${ctx.raw}%  (target: ${perfiles[ctx.dataIndex].kcal_target} kcal)` }} },
+          scales: hAxisOpts,
+        }
+      });
+
+      // ⑨ VV&E — desviación de macros (horizontal agrupado)
+      new Chart(document.getElementById('chartDesvMacros'), {
+        type: 'bar',
+        data: {
+          labels: pLabels,
+          datasets: [
+            { label:'Proteína (%)', data: perfiles.map(p => p.desv_proteina),
+              backgroundColor:'#3b82f6cc', borderRadius:4 },
+            { label:'Carbos (%)',   data: perfiles.map(p => p.desv_carbos),
+              backgroundColor:'#f59e0bcc', borderRadius:4 },
+            { label:'Grasa (%)',    data: perfiles.map(p => p.desv_grasa),
+              backgroundColor:'#ef4444cc', borderRadius:4 },
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } },
+          scales: hAxisOpts,
+        }
+      });
+
+      // ⑩ Métricas globales
+      const comTot  = perfiles.reduce((s,p) => s + p.num_comidas, 0);
+      const factPct = Math.round(perfiles.filter(p => p.factible).length / perfiles.length * 100);
+      const avgIng  = Math.round(perfiles.reduce((s,p) => s + p.ing_unicos, 0) / perfiles.length);
+      new Chart(document.getElementById('chartMetricas'), {
+        type: 'bar',
+        data: {
+          labels: ['Factibilidad (%)', 'Comidas generadas', 'Ing. únicos/plan (avg)', 'Silueta K-Means (×100)'],
+          datasets: [{ label:'Valor',
+            data:  [ factPct, comTot, avgIng, Math.round(km.silueta_k4 * 100) ],
+            backgroundColor: ['#2ecc71','#3b82f6','#f39c12','#9b59b6'],
+            borderRadius: 6 }]
+        },
+        options: { indexAxis:'y', plugins:{ legend:{ display:false } },
+                   scales:{ x:{ beginAtZero:true, grid:{color:'#f1f1f1'}, ticks:{font:{size:11}} },
+                             y:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+      });
+
+      // ⑪ Tabla resumen VV&E
+      document.getElementById('vveTable').innerHTML = `
+        <div class="a-card" style="padding:0;overflow:hidden">
+          <table class="a-table">
+            <thead><tr>
+              <th>Perfil</th><th>Target (kcal)</th><th>Real (kcal)</th>
+              <th>Desv. kcal</th><th>Comidas</th><th>Ing. únicos</th><th>Estado</th>
+            </tr></thead>
+            <tbody>
+              ${perfiles.map(p => `
+                <tr>
+                  <td>${p.label.replace('\n','<br>')}</td>
+                  <td>${p.kcal_target}</td><td>${p.kcal_real}</td>
+                  <td style="color:${Math.abs(p.desv_kcal)<=5?'#2ecc71':'#e74c3c'};font-weight:700">
+                    ${p.desv_kcal > 0 ? '+' : ''}${p.desv_kcal}%
+                  </td>
+                  <td>${p.num_comidas}</td><td>${p.ing_unicos}</td>
+                  <td>${p.factible ? '✅ OK' : '⚠️ Parcial'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
     }
   </script>
 </body>

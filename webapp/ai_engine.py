@@ -193,27 +193,27 @@ MAX_POR_CATEGORIA_BASE = {
 PORCIONES_SNACK = {
     'perder_grasa':  {'Fruta': {'min': 80,'max': 200}, 'Lacteo': {'min': 80,'max': 150}, 'Verdura': {'min': 50,'max': 100}, 'Grasa': {'min': 10,'max': 20}},
     'mantener':      {'Fruta': {'min': 80,'max': 200}, 'Lacteo': {'min': 80,'max': 200}, 'Grasa': {'min': 15,'max': 30}, 'Proteina': {'min': 30,'max': 100}},
-    'ganar_musculo': {'Proteina': {'min': 80,'max': 150}, 'Lacteo': {'min': 80,'max': 120}, 'Fruta': {'min': 80,'max': 200}, 'Carbohidrato': {'min': 30,'max': 60}},
+    'ganar_musculo': {'Proteina': {'min': 30,'max': 150}, 'Lacteo': {'min': 50,'max': 150}, 'Fruta': {'min': 80,'max': 200}, 'Carbohidrato': {'min': 30,'max': 80}, 'Grasa': {'min': 20,'max': 50}},
 }
 MAX_POR_CATEGORIA_SNACK = {
     'perder_grasa':  {'Fruta': 1, 'Lacteo': 1, 'Verdura': 1, 'Grasa': 1},
     'mantener':      {'Fruta': 1, 'Lacteo': 1, 'Grasa': 1, 'Proteina': 1},
-    'ganar_musculo': {'Proteina': 1, 'Lacteo': 1, 'Fruta': 1, 'Carbohidrato': 1},
+    'ganar_musculo': {'Proteina': 1, 'Lacteo': 1, 'Fruta': 1, 'Carbohidrato': 1, 'Grasa': 1},
 }
 CATEGORIAS_SNACK = {
     'perder_grasa':  ['Fruta', 'Lacteo', 'Verdura', 'Grasa'],
     'mantener':      ['Fruta', 'Lacteo', 'Grasa', 'Proteina'],
-    'ganar_musculo': ['Proteina', 'Lacteo', 'Fruta', 'Carbohidrato'],
+    'ganar_musculo': ['Proteina', 'Lacteo', 'Fruta', 'Carbohidrato', 'Grasa'],
 }
 CATEGORIAS_DESAYUNO   = ['Carbohidrato', 'Proteina', 'Lacteo', 'Grasa', 'Fruta', 'Bebida']
 GRUPOS_PROTEINA_RAPIDA = ['huevo', 'yogurt', 'suplemento', 'queso']
 LIMITE_INGREDIENTES    = {
     'perder_grasa':  {'desayuno': 3, 'almuerzo': 4, 'cena': 3, 'snack': 2},
     'mantener':      {'desayuno': 3, 'almuerzo': 4, 'cena': 3, 'snack': 2},
-    'ganar_musculo': {'desayuno': 4, 'almuerzo': 5, 'cena': 4, 'snack': 3},
+    'ganar_musculo': {'desayuno': 4, 'almuerzo': 5, 'cena': 4, 'snack': 4},
 }
 TOLERANCIA_CALORIAS = 0.10
-TOLERANCIA_MACROS   = 0.20
+TOLERANCIA_MACROS   = 0.25
 LAMBDA_BONUS        = 1.0
 PCT_PROTEINA_FORZADA = 0.70
 MAX_INTENTOS_FALLBACK = 2

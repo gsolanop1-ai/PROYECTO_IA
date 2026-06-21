@@ -553,15 +553,17 @@ body {
   align-items: center;
   gap: 6px;
   background: none;
-  border: none;
-  color: var(--gris-400);
+  border: 2px solid var(--rojo);
+  color: var(--rojo);
   font-size: .85rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  padding: 8px 18px;
   margin-bottom: 14px;
+  border-radius: 50px;
+  transition: all .15s;
 }
-.btn-back:hover { color: var(--gris-700); }
+.btn-back:hover { background: var(--rojo-light); }
 
 .btn-secondary {
   width: 100%;

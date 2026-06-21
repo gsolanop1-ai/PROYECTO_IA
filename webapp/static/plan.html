@@ -5,6 +5,139 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NutriPerú — Mi Plan</title>
   <link rel="stylesheet" href="/static/style.css"/>
+  <style>
+    .audit-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    .audit-layout > .container {
+      flex: 1;
+      max-width: none;
+      margin: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .audit-panel {
+      width: 256px;
+      flex-shrink: 0;
+      padding-top: 16px;
+    }
+    .audit-panel-title {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gris-400);
+      margin: 0 0 8px 2px;
+    }
+    .audit-section-title {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--gris-400);
+      margin: 0 0 10px;
+    }
+    .audit-step {
+      display: flex;
+      gap: 8px;
+      padding-bottom: 9px;
+      margin-bottom: 9px;
+      border-bottom: 1px solid var(--gris-200);
+    }
+    .audit-step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .audit-num { font-size: .85rem; min-width: 18px; padding-top: 1px; }
+    .audit-step-label {
+      font-size: .73rem;
+      font-weight: 600;
+      color: var(--gris-700);
+      margin-bottom: 2px;
+    }
+    .audit-formula {
+      font-size: .67rem;
+      font-family: 'Courier New', monospace;
+      color: var(--gris-400);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .audit-result { font-size: .73rem; font-weight: 600; color: var(--gris-700); margin-top: 3px; }
+    .audit-tag {
+      font-family: inherit;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: .63rem;
+      font-weight: 600;
+    }
+    .audit-warn-box {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: .7rem;
+      color: #e65100;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .audit-macro-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 7px;
+      font-size: .73rem;
+      color: var(--gris-700);
+    }
+    .audit-macro-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .audit-macro-dot.p { background: #3b82f6; }
+    .audit-macro-dot.c { background: #f59e0b; }
+    .audit-macro-dot.g { background: #ef4444; }
+    .audit-macro-label { flex: 1; }
+    .audit-macro-formula {
+      font-family: 'Courier New', monospace;
+      font-size: .63rem;
+      color: var(--gris-400);
+    }
+    .audit-macro-g { font-weight: 700; min-width: 34px; text-align: right; }
+    .audit-note {
+      font-size: .63rem;
+      color: var(--gris-400);
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--gris-200);
+    }
+    .audit-comida { margin-bottom: 9px; }
+    .audit-comida:last-child { margin-bottom: 0; }
+    .audit-comida-title {
+      font-size: .71rem;
+      font-weight: 700;
+      color: var(--gris-700);
+      margin-bottom: 3px;
+    }
+    .audit-regla {
+      font-size: .67rem;
+      color: #555;
+      line-height: 1.5;
+      padding-left: 7px;
+      border-left: 2px solid var(--rojo);
+      margin-bottom: 3px;
+    }
+    .audit-no-regla {
+      font-size: .67rem;
+      color: var(--gris-400);
+      font-style: italic;
+      padding-left: 7px;
+    }
+    @media (max-width: 700px) {
+      .audit-layout { flex-direction: column; padding: 0; }
+      .audit-panel { width: 100%; padding: 0 16px 16px; }
+      .audit-layout > .container { padding-left: 0; padding-right: 0; }
+    }
+  </style>
 </head>
 <body>
   <div class="topbar">
@@ -24,6 +157,7 @@
     </div>
   </div>
 
+<div class="audit-layout">
   <div class="container">
     <!-- Anillo calórico -->
     <div id="ringSection" class="card" style="padding:0">
@@ -74,7 +208,24 @@
       <span class="icon">⚠️</span>
       <span id="errorText"></span>
     </p>
-  </div>
+  </div><!-- /.container -->
+
+  <aside class="audit-panel" id="auditPanel" style="display:none">
+    <div class="audit-panel-title">Auditoría del sistema</div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div class="audit-section-title">Cálculo calórico</div>
+      <div id="auditKcal"></div>
+    </div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div class="audit-section-title">Distribución de macros</div>
+      <div id="auditMacros"></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="audit-section-title">Reglas del sistema experto</div>
+      <div id="auditReglas"></div>
+    </div>
+  </aside>
+</div><!-- /.audit-layout -->
 
   <div class="toast" id="toast"></div>
 
@@ -184,7 +335,6 @@
       const platillo = nombres_platillos?.[tipo] || {};
       const ings     = comida_res.plan || [];
       const tot      = comida_res.totales;
-      const tgt      = comida_res.targets;
 
       const ingRows = ings.map(i => `
         <div class="ing-row">
@@ -242,14 +392,18 @@
 
     async function cargarPlan() {
       try {
-        const res  = await fetch(`/api/usuario/${username}/plan`);
+        const [res, perfilRes] = await Promise.all([
+          fetch(`/api/usuario/${username}/plan`),
+          fetch(`/api/usuario/${username}/perfil`),
+        ]);
         if (res.status === 400) {
           window.location.href = '/perfil';
           return;
         }
         if (!res.ok) throw new Error((await res.json()).detail || 'Error al cargar plan');
 
-        const plan = await res.json();
+        const plan   = await res.json();
+        const perfil = perfilRes.ok ? await perfilRes.json() : null;
         const td   = plan.totales_dia;
         const tt   = plan.targets_dia;
         const np   = plan.nombres_platillos || {};
@@ -275,12 +429,113 @@
         const alm = document.getElementById('card-almuerzo');
         if (alm) alm.classList.add('open');
 
+        if (perfil) renderAudit(plan, perfil);
+
       } catch(e) {
         document.getElementById('mealsContainer').innerHTML = '';
         const errEl = document.getElementById('errorMsg');
         document.getElementById('errorText').textContent = e.message;
         errEl.style.display = 'block';
       }
+    }
+
+    // ── Auditoría del sistema ─────────────────────────────────
+    const OBJETIVOS_CFG = {
+      perder_grasa:  {ajuste:0.80, pPct:40, cPct:35, gPct:25, label:'Perder grasa (−20%)'},
+      mantener:      {ajuste:1.00, pPct:30, cPct:45, gPct:25, label:'Mantener peso (×1.00)'},
+      ganar_musculo: {ajuste:1.15, pPct:35, cPct:40, gPct:25, label:'Ganar músculo (+15%)'},
+    };
+    const FACTOR_NOMBRES = {
+      '1.2':'sedentario','1.375':'ligero','1.55':'moderado','1.725':'intenso','1.9':'muy intenso'
+    };
+    const COMIDA_AUDIT = {desayuno:'☀️ Desayuno', almuerzo:'🍽️ Almuerzo', cena:'🌙 Cena', snack:'🥝 Snack'};
+
+    function renderAudit(plan, perfil) {
+      const td  = plan.targets_dia;
+      const obj = td.objetivo;
+      const cfg = OBJETIVOS_CFG[obj] || OBJETIVOS_CFG.mantener;
+      const minimo    = perfil.sexo === 'M' ? 1500 : 1200;
+      const kcalBruta = Math.round(td.get * cfg.ajuste);
+      const pisoPiado = kcalBruta < minimo;
+
+      // Detectar factor de actividad
+      const factorRaw = td.get / td.tmb;
+      let factorVal = '', factorNombre = '';
+      for (const [k, v] of Object.entries(FACTOR_NOMBRES)) {
+        if (Math.abs(factorRaw - parseFloat(k)) < 0.02) { factorVal = k; factorNombre = v; break; }
+      }
+
+      // Fórmula TMB según sexo
+      const signo      = perfil.sexo === 'M' ? '+5' : '−161';
+      const formulaTMB = `10×${perfil.peso_kg} + 6.25×${perfil.altura_cm} − 5×${perfil.edad} ${signo}`;
+
+      // ① Sección cálculo calórico
+      document.getElementById('auditKcal').innerHTML = `
+        <div class="audit-step">
+          <span class="audit-num">①</span>
+          <div>
+            <div class="audit-step-label">TMB — Mifflin-St Jeor</div>
+            <div class="audit-formula">${formulaTMB}</div>
+            <div class="audit-result">= ${td.tmb} kcal</div>
+          </div>
+        </div>
+        <div class="audit-step">
+          <span class="audit-num">②</span>
+          <div>
+            <div class="audit-step-label">GET — Gasto Energético Total</div>
+            <div class="audit-formula">${td.tmb} × ${factorVal} <span class="audit-tag">${factorNombre}</span></div>
+            <div class="audit-result">= ${td.get} kcal</div>
+          </div>
+        </div>
+        <div class="audit-step">
+          <span class="audit-num">③</span>
+          <div>
+            <div class="audit-step-label">Ajuste por objetivo</div>
+            <div class="audit-formula">${td.get} × ${cfg.ajuste} <span class="audit-tag">${cfg.label}</span></div>
+            <div class="audit-result">= ${kcalBruta} kcal${pisoPiado ? ' ↓' : ''}</div>
+          </div>
+        </div>
+        ${pisoPiado ? `<div class="audit-warn-box">
+          ⚠️ Piso de seguridad aplicado<br>
+          max(${kcalBruta}, ${minimo}) = <strong>${td.calorias_objetivo} kcal</strong><br>
+          <span style="font-size:.63rem">Mínimo para ${perfil.sexo === 'M' ? 'hombres' : 'mujeres'}</span>
+        </div>` : ''}`;
+
+      // ② Sección macros
+      const kcal = td.calorias_objetivo;
+      document.getElementById('auditMacros').innerHTML = `
+        <div class="audit-macro-row">
+          <span class="audit-macro-dot p"></span>
+          <span class="audit-macro-label">Proteína <strong>${cfg.pPct}%</strong></span>
+          <span class="audit-macro-formula">${kcal}×${(cfg.pPct/100).toFixed(2)}÷4</span>
+          <span class="audit-macro-g">${td.proteina_g}g</span>
+        </div>
+        <div class="audit-macro-row">
+          <span class="audit-macro-dot c"></span>
+          <span class="audit-macro-label">Carbos <strong>${cfg.cPct}%</strong></span>
+          <span class="audit-macro-formula">${kcal}×${(cfg.cPct/100).toFixed(2)}÷4</span>
+          <span class="audit-macro-g">${td.carbos_g}g</span>
+        </div>
+        <div class="audit-macro-row">
+          <span class="audit-macro-dot g"></span>
+          <span class="audit-macro-label">Grasa <strong>${cfg.gPct}%</strong></span>
+          <span class="audit-macro-formula">${kcal}×${(cfg.gPct/100).toFixed(2)}÷9</span>
+          <span class="audit-macro-g">${td.grasa_g}g</span>
+        </div>
+        <p class="audit-note">Proteína y carbos: 4 kcal/g · Grasa: 9 kcal/g</p>`;
+
+      // ③ Sección reglas del SE
+      const reglasPor = plan.reglas_por_comida || {};
+      document.getElementById('auditReglas').innerHTML =
+        ['desayuno','almuerzo','cena','snack'].map(tipo => `
+          <div class="audit-comida">
+            <div class="audit-comida-title">${COMIDA_AUDIT[tipo]}</div>
+            ${(reglasPor[tipo] || []).length
+              ? (reglasPor[tipo]).map(r => `<div class="audit-regla">${r}</div>`).join('')
+              : '<div class="audit-no-regla">Sin reglas adicionales</div>'}
+          </div>`).join('');
+
+      document.getElementById('auditPanel').style.display = 'block';
     }
 
     cargarPlan();

@@ -28,9 +28,9 @@
   </div>
 
   <script>
-    // Si ya hay username guardado, ir directo al plan
+    // Si ya hay username guardado, redirigir según tipo
     const saved = localStorage.getItem('np_username');
-    if (saved) window.location.href = '/plan';
+    if (saved) window.location.href = saved === 'admin' ? '/admin' : '/plan';
 
     document.getElementById('usernameInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') entrar();
@@ -47,6 +47,13 @@
       }
       if (!/^[a-z0-9_]+$/.test(username)) {
         err.textContent = 'Solo letras minúsculas, números y guión bajo.';
+        return;
+      }
+
+      // Usuario especial: panel académico
+      if (username === 'admin') {
+        localStorage.setItem('np_username', 'admin');
+        window.location.href = '/admin';
         return;
       }
 
