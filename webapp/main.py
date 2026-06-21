@@ -39,6 +39,10 @@ def plan_page():
 def ingredientes_page():
     return FileResponse(STATIC_DIR / "ingredientes.html")
 
+@app.get("/admin")
+def admin_page():
+    return FileResponse(STATIC_DIR / "admin.html")
+
 
 # ── Schemas ───────────────────────────────────────────────────
 class EntrarRequest(BaseModel):

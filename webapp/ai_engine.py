@@ -373,6 +373,7 @@ def optimizar_comida(resultado_experto, objetivo_usuario='mantener'):
         'estado': 'optimo', 'plan': plan, 'totales': totales,
         'targets': targets, 'desviaciones': desv, 'comida': comida,
         'fallback_aplicado': fallback,
+        'reglas_log': resultado_experto.get('reglas_log', []),
     }
 
 # ── Orquestador ───────────────────────────────────────────────
@@ -432,6 +433,7 @@ class OrquestadorDiario:
             'desviaciones_dia':  desv_dia,
             'targets_dia':       targets_dia,
             'ingredientes_unicos': len(unicos),
+            'reglas_por_comida': {r['comida']: r.get('reglas_log', []) for r in resultados},
         }
 
 # ── Generador de nombres de platillos ────────────────────────
