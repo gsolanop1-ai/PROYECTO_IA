@@ -3,14 +3,14 @@
 > Proyecto académico — Inteligencia Artificial: Principios y Técnicas (ISIA-108)  
 > Universidad Privada Antenor Orrego · Semestre 2026-10
 
-Sistema de recomendación nutricional personalizada que genera planes alimenticios diarios completos (desayuno, almuerzo, cena, snack) con ingredientes peruanos. Integra un **Sistema Experto basado en reglas**, **optimización lineal entera (MILP)**, **K-Means clustering** e **inteligencia artificial generativa (LLM)**.
+Sistema de recomendación nutricional personalizada que genera planes alimenticios diarios completos (desayuno, almuerzo, cena, snack) con ingredientes peruanos. Integra un **Sistema Experto basado en reglas**, **optimización lineal entera (MILP)** y **K-Means clustering**. Los nombres de los platillos generados se enriquecen con un LLM (Gemini) como complemento.
 
 ---
 
 ## Demo en producción
 
-**URL pública:** _(disponible tras deploy en Render.com)_  
-**Panel académico:** `<url>/admin`
+**URL pública:** [nutriperu.onrender.com](https://nutriperu.onrender.com)  
+**Panel académico:** [nutriperu.onrender.com/admin](https://nutriperu.onrender.com/admin)
 
 > Usuario de acceso al panel: `admin`
 
@@ -34,10 +34,8 @@ Usuario
 ├──────────────────────────────────────────────────────────┤
 │  Capa 4 — Optimizador MILP (PuLP)                       │
 │           Minimiza desviación calórica/macros           │
-├──────────────────────────────────────────────────────────┤
-│  Capa 5 — LLM generativo (Gemini + fallback local)      │
-│           Nombres creativos para cada platillo           │
 └──────────────────────────────────────────────────────────┘
+                    + LLM (Gemini) — nombres creativos de platillos
   │
   ▼
 Plan diario personalizado (4 comidas · gramos exactos)
@@ -102,7 +100,7 @@ Desviacíon calórica promedio del **1.7%** — muy por debajo del umbral del 10
 ## Estructura del proyecto
 
 ```
-PROYECTO_IA/
+IA-Despliegue/
 ├── data/
 │   └── ingredientes_dataset.csv     # 81 ingredientes curados
 ├── docs/
@@ -133,8 +131,8 @@ PROYECTO_IA/
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/gsolanop1-ai/PROYECTO_IA.git
-cd PROYECTO_IA
+git clone https://github.com/gsolanop1-ai/IA-Despliegue.git
+cd IA-Despliegue
 
 # 2. Instalar dependencias
 pip install -r webapp/requirements.txt
