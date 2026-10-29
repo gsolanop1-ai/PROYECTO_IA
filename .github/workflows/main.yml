@@ -11,10 +11,10 @@ jobs:
       - run: echo "Rama ${{ github.ref }} del repositorio ${{ github.repository }}"
 
       - name: Descargar el repositorio
-        run: echo 'Simulación: Descargando el repositorio'
+        run: echo "Simulación: Descargando el repositorio"
 
       - name: Listar los archivos del repositorio
-        run: echo 'Simulación: Listando los archivos del repositorio'
+        run: echo "Simulación: Listando los archivos del repositorio"
 
       - name: Validación
         run: |
