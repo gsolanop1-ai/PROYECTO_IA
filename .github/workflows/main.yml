@@ -1,0 +1,41 @@
+name: CineAndes IaC Pipeline
+
+run-name: ${{ github.actor }} está ejecutando el pipeline de CineAndes
+on: [push]
+
+jobs:
+  CineAndes-Pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evento detonante
+        run: echo "Pipeline activado por un ${{ github.event_name }}"
+
+      - name: Rama y Repositorio
+        run: echo "Rama ${{ github.ref }} del repositorio ${{ github.repository }}"
+
+      - name: Descargar el repositorio
+        run: echo "Descargando el repositorio (simulado)"
+
+      - name: Listar los archivos del repositorio
+        run: echo "Listando los archivos del repositorio (simulado)"
+
+      - name: Instalar Terraform
+        run: echo "Instalando versión requerida de Terraform (simulado)"
+
+      - name: Revisar formato de los módulos de red y cómputo
+        run: echo "Revisando formato de los módulos de red y cómputo (simulado)"
+
+      - name: Inicializar Terraform sin backend remoto
+        run: echo "Inicializando Terraform sin backend remoto (simulado)"
+
+      - name: Validar la configuración de la infraestructura
+        run: echo "Validando la configuración de la infraestructura (simulado)"
+
+      - name: Etapa de plan
+        run: echo "Etapa de plan - terraform plan con credenciales de AWS (pendiente)"
+
+      - name: Etapa de despliegue
+        run: echo "Etapa de despliegue - Ansible empaqueta y despliega las 7 Lambdas (pendiente)"
+
+      - name: Etapa de verificación
+        run: echo "Etapa de verificación - Ansible comprueba que las funciones respondan (pendiente)"
