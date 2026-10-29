@@ -7,35 +7,39 @@ jobs:
   CineAndes-Pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Evento detonante
-        run: echo "Pipeline activado por un ${{ github.event_name }}"
-
-      - name: Rama y Repositorio
-        run: echo "Rama ${{ github.ref }} del repositorio ${{ github.repository }}"
+      - run: echo "Pipeline activado por un ${{ github.event_name }}"
+      - run: echo "Rama ${{ github.ref }} del repositorio ${{ github.repository }}"
 
       - name: Descargar el repositorio
-        run: echo "Descargando el repositorio (simulado)"
+        run: echo "Simulación: Descargando el repositorio..."
 
       - name: Listar los archivos del repositorio
-        run: echo "Listando los archivos del repositorio (simulado)"
+        run: echo "Simulación: Listando los archivos del repositorio..."
 
-      - name: Instalar Terraform
-        run: echo "Instalando versión requerida de Terraform (simulado)"
+      - name: Validación
+        run: |
+          echo "Revisar el formato del código de Terraform"
+          echo "Inicializar Terraform y descargar el proveedor de AWS"
+          echo "Validar la configuración de los módulos de red y cómputo"
 
-      - name: Revisar formato de los módulos de red y cómputo
-        run: echo "Revisando formato de los módulos de red y cómputo (simulado)"
+      - name: Planificación
+        run: |
+          echo "Generar el plan de cambios en AWS con terraform plan"
 
-      - name: Inicializar Terraform sin backend remoto
-        run: echo "Inicializando Terraform sin backend remoto (simulado)"
+      - name: Despliegue de infraestructura
+        run: |
+          echo "Crear la red (VPC, subredes, NAT y tablas de rutas)"
+          echo "Crear el cómputo (grupo de seguridad, roles de IAM y Lambdas)"
 
-      - name: Validar la configuración de la infraestructura
-        run: echo "Validando la configuración de la infraestructura (simulado)"
+      - name: Despliegue de las funciones
+        run: |
+          echo "Empaquetar el código de las 7 Lambdas con Ansible"
+          echo "Desplegar el código de las Lambdas con Ansible"
 
-      - name: Etapa de plan
-        run: echo "Etapa de plan - terraform plan con credenciales de AWS (pendiente)"
+      - name: Verificación
+        run: |
+          echo "Verificar con Ansible que las Lambdas respondan"
 
-      - name: Etapa de despliegue
-        run: echo "Etapa de despliegue - Ansible empaqueta y despliega las 7 Lambdas (pendiente)"
-
-      - name: Etapa de verificación
-        run: echo "Etapa de verificación - Ansible comprueba que las funciones respondan (pendiente)"
+      - name: Limpieza del entorno de desarrollo
+        run: |
+          echo "Destruir el entorno de desarrollo con terraform destroy"
